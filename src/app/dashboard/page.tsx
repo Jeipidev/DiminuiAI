@@ -129,7 +129,7 @@ export default function Dashboard() {
         </h1>
         <button
           onClick={sair}
-          className="px-4 py-2 text-sm text-black bg-primary rounded-xl font-semibold hover:scale-105 transition drop-shadow-[0_0_6px_#00BFFF]"
+          className="px-5 py-3 text-sm bg-red-600 text-white rounded hover:bg-red-700"
         >
           Sair
         </button>

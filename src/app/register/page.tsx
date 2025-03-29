@@ -36,7 +36,7 @@ export default function Register() {
       if (auth.currentUser && nome) {
         await updateProfile(auth.currentUser, { displayName: nome });
       }
-      router.push('/eletronicos');
+      router.push('/dashboard');
     } catch (error: any) {
       setErro(error.message);
     }

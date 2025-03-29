@@ -18,7 +18,7 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, senha);
-      router.push('/eletronicos');
+      router.push('/dashboard');
     } catch (error: any) {
       setErro(error.message);
     }
