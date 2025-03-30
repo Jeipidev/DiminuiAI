@@ -3,8 +3,14 @@ import { Meta } from '../../types/meta';
 
 export const sortearNovaMeta = (tipo: 'semanais' | 'mensais', usadas: string[]): Meta => {
   const pool = bancoDeMetas[tipo].filter(m => !usadas.includes(m.id));
-  const fallback = bancoDeMetas[tipo][Math.floor(Math.random() * bancoDeMetas[tipo].length)];
-  const nova = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : fallback;
+  const fallback = {
+    ...bancoDeMetas[tipo][Math.floor(Math.random() * bancoDeMetas[tipo].length)],
+    progresso: 0,
+    concluida: false,
+  };
+  const nova = pool.length > 0
+    ? { ...pool[Math.floor(Math.random() * pool.length)], progresso: 0, concluida: false }
+    : fallback;
   return nova;
 };
 
