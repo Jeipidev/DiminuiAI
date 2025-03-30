@@ -49,6 +49,13 @@ export default function PerfilPage() {
       default: return <FiAward className="text-xl" />;
     }
   };
+
+  const dificuldade = (valor: number) => {
+    if (valor <= 1) return { label: 'Fácil', color: 'text-green-400' };
+    if (valor <= 25) return { label: 'Intermediário', color: 'text-yellow-400' };
+    return { label: 'Lendário', color: 'text-red-400' };
+  };
+  
   
 
   useEffect(() => {
@@ -128,29 +135,39 @@ export default function PerfilPage() {
         </section>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {conquistas.map(c => {
-            const ativo = desbloqueadas.includes(c.id);
-            return (
-              <div
-                key={c.id}
-                className={`bg-[#161B22] p-4 rounded-xl shadow-md border transition-all ${
-                  ativo
-                    ? 'border-[#00BFFF]'
-                    : 'border-white/10 opacity-50 grayscale'
-                }`}
-              >
-                  <div className="flex items-center gap-2 mb-2">
-    {getIcon(c.tipo)}
-    <h3 className="text-lg font-semibold text-white">{c.titulo}</h3>
-  </div>
-  <p className="text-sm text-gray-400">{c.descricao}</p>
-  <span className="text-xs mt-2 inline-block text-gray-500">
-    Tipo: {c.tipo} | Condição: {c.condicao}
-  </span>
-</div>
-            );
-          })}
-        </section>
+  {conquistas.map(c => {
+    const ativo = desbloqueadas.includes(c.id);
+    const cor = c.dificuldade === 'fácil'
+      ? 'text-green-400'
+      : c.dificuldade === 'médio'
+      ? 'text-yellow-300'
+      : 'text-red-400';
+
+    return (
+      <div
+        key={c.id}
+        className={`bg-[#161B22] p-4 rounded-xl shadow-md border transition-all ${ativo
+          ? 'border-[#00BFFF]'
+          : 'border-white/10 opacity-50 grayscale'}`}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          {getIcon(c.tipo)}
+          <h3 className="text-lg font-semibold text-white">{c.titulo}</h3>
+          {c.dificuldade && (
+            <span className={`ml-auto text-xs px-2 py-1 rounded-full bg-white/10 ${cor}`}>
+              {c.dificuldade}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-gray-400">{c.descricao}</p>
+        <span className="text-xs mt-2 inline-block text-gray-500">
+          Tipo: {c.tipo} | Condição: {c.condicao}
+        </span>
+      </div>
+    );
+  })}
+</section>
+
       </div>
     </>
   );

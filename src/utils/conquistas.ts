@@ -1,13 +1,22 @@
 export const conquistas = [
-    { id: "meta-d1685f", titulo: "Primeira Meta!", descricao: "Conclua sua primeira meta.", tipo: "metas", condicao: "1" },
-    { id: "meta-f9322d", titulo: "Foco Total", descricao: "Conclua 10 metas.", tipo: "metas", condicao: "10" },
-    { id: "meta-42ca90", titulo: "Maratonista de Metas", descricao: "Conclua 30 metas.", tipo: "metas", condicao: "30" },
-    { id: "eletr-cabcb7", titulo: "Engenheiro Doméstico", descricao: "Adicione 5 eletrônicos.", tipo: "eletronicos", condicao: "5" },
-    { id: "eletr-881080", titulo: "Museu de Eletros", descricao: "Adicione 10 eletrônicos.", tipo: "eletronicos", condicao: "10" },
-    { id: "cons-e95ef3", titulo: "Caça Desperdício", descricao: "Economize mais de 50 kWh.", tipo: "consumo", condicao: "50" },
-    { id: "cons-e4244d", titulo: "Economista", descricao: "Economize R$100 em um mês.", tipo: "economia", condicao: "100" },
-    { id: "tari-aefa34", titulo: "Tarifa Ninja", descricao: "Adicione mais de 3 tarifas.", tipo: "tarifas", condicao: "3" },
-    { id: "combo-016032", titulo: "Tudo no Controle", descricao: "Tenha metas, tarifas e eletrônicos ativos.", tipo: "combo", condicao: "all" },
-    { id: "meta-15bccb", titulo: "Rotina Brilhante", descricao: "Conclua uma meta semanal por 4 semanas seguidas.", tipo: "semanal", condicao: "4x consecutivas" }
-  ];
-  
+  { id: "meta-d1685f", titulo: "Primeira Meta!", descricao: "Conclua sua primeira meta.", tipo: "metas", condicao: "1", dificuldade: "fácil" },
+  { id: "meta-f9322d", titulo: "Foco Total", descricao: "Conclua 10 metas.", tipo: "metas", condicao: "10", dificuldade: "médio" },
+  { id: "meta-42ca90", titulo: "Maratonista de Metas", descricao: "Conclua 30 metas.", tipo: "metas", condicao: "30", dificuldade: "difícil" },
+  { id: "eletr-cabcb7", titulo: "Engenheiro Doméstico", descricao: "Adicione 5 eletrônicos.", tipo: "eletronicos", condicao: "5", dificuldade: "fácil" },
+  { id: "eletr-881080", titulo: "Museu de Eletros", descricao: "Adicione 10 eletrônicos.", tipo: "eletronicos", condicao: "10", dificuldade: "médio" },
+  { id: "cons-e95ef3", titulo: "Caça Desperdício", descricao: "Economize mais de 50 kWh.", tipo: "consumo", condicao: "50", dificuldade: "difícil" },
+  { id: "cons-e4244d", titulo: "Economista", descricao: "Economize R$100 em um mês.", tipo: "economia", condicao: "100", dificuldade: "difícil" },
+  { id: "tari-aefa34", titulo: "Tarifa Ninja", descricao: "Adicione mais de 3 tarifas.", tipo: "tarifas", condicao: "3", dificuldade: "fácil" },
+  { id: "combo-016032", titulo: "Tudo no Controle", descricao: "Tenha metas, tarifas e eletrônicos ativos.", tipo: "combo", condicao: "all", dificuldade: "médio" },
+  { id: "meta-15bccb", titulo: "Rotina Brilhante", descricao: "Conclua uma meta semanal por 4 semanas seguidas.", tipo: "semanal", condicao: "4x consecutivas", dificuldade: "médio" },
+  { id: "geral-172ff4", titulo: "Primeiros Passos", descricao: "Complete qualquer ação no sistema.", tipo: "geral", condicao: "1", dificuldade: "fácil" },
+  { id: "contas-e409d5", titulo: "Conta Registrada", descricao: "Adicione sua primeira conta de luz.", tipo: "contas", condicao: "1", dificuldade: "fácil" },
+  { id: "contas-8ff490", titulo: "Histórico Completo", descricao: "Adicione 12 meses de contas.", tipo: "contas", condicao: "12", dificuldade: "médio" },
+  { id: "eletronicos-22fe10", titulo: "Catálogo Completo", descricao: "Adicione 25 eletrônicos.", tipo: "eletronicos", condicao: "25", dificuldade: "médio" },
+  { id: "metas-edead9", titulo: "MetaLendário", descricao: "Conclua 100 metas.", tipo: "metas", condicao: "100", dificuldade: "difícil" },
+  { id: "economia-d3882e", titulo: "Ultra Economista", descricao: "Economize mais de R$500 no total.", tipo: "economia", condicao: "500", dificuldade: "difícil" },
+  { id: "eletronicos-a283d7", titulo: "Engenharia de Elite", descricao: "Adicione 50 eletrônicos.", tipo: "eletronicos", condicao: "50", dificuldade: "difícil" },
+  { id: "consumo-2a24c0", titulo: "Economia Total", descricao: "Economize mais de 200 kWh.", tipo: "consumo", condicao: "200", dificuldade: "difícil" },
+  { id: "tarifas-98e4d1", titulo: "Rei das Tarifas", descricao: "Adicione 10 tarifas.", tipo: "tarifas", condicao: "10", dificuldade: "médio" },
+  { id: "semanal-db072b", titulo: "Constância Total", descricao: "Conclua metas semanais por 12 semanas.", tipo: "semanal", condicao: "12x consecutivas", dificuldade: "médio" }
+];

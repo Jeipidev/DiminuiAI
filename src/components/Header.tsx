@@ -43,6 +43,7 @@ export default function Header({ nome, exibirBoasVindas = true, children }: Head
                 <button onClick={() => { router.push("/dashboard/metas"); setMenuAberto(false); }} className="w-full text-left px-4 py-2 rounded hover:bg-[#1E90FF]/20">Metas</button>
                 <button onClick={() => { router.push("/dashboard/perfil"); setMenuAberto(false); }} className="w-full text-left px-4 py-2 rounded hover:bg-[#1E90FF]/20">Conquistas</button>
                 <button onClick={() => { router.push("/dashboard/tutorial"); setMenuAberto(false); }} className="w-full text-left px-4 py-2 rounded hover:bg-[#1E90FF]/20">Tutorial</button>
+                <button onClick={() => { router.push("/dashboard/contas"); setMenuAberto(false); }} className="w-full text-left px-4 py-2 rounded hover:bg-[#1E90FF]/20">Contas</button>
                 <button onClick={() => { sair(); setMenuAberto(false); }} className="w-full text-left px-4 py-2 text-red-500 rounded hover:bg-red-900/20">Sair</button>
               </div>
             )}
