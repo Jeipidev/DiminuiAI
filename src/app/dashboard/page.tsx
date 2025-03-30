@@ -57,10 +57,9 @@ export default function Dashboard() {
   const converterParaWatts = (valor: number, unidade: string) => {
     switch (unidade) {
       case "W": return valor;
-      case "kW": return valor * 1000;
+      case "kWh": return valor * 1000;
       case "VA": return valor * 0.9;
       case "V": return valor * 0.1;
-      case "kWh": return (valor * 1000) / (30 * (parseFloat(novo.horas) || 1));
       default: return valor;
     }
   };
@@ -211,7 +210,6 @@ export default function Dashboard() {
       onChange={e => setNovo({ ...novo, unidade: e.target.value })}
     >
       <option value="W">W</option>
-      <option value="kW">kW</option>
       <option value="VA">VA</option>
       <option value="V">Volts</option>
       <option value="kWh">kWh</option>
