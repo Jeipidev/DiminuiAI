@@ -35,7 +35,16 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [eletronicos, setEletronicos] = useState<any[]>([]);
   const [tarifas, setTarifas] = useState<string[]>([""]);
-  const [novo, setNovo] = useState({ nome: "", valor: "", unidade: "W", horas: "" });
+  const [novo, setNovo] = useState({
+    nome: "",
+    valor: "",
+    unidade: "W",
+    horas: "",
+    voltagem: "",
+    hz: "",
+    fp: "1",
+    corrente: ""
+  });  
   const router = useRouter();
 
   useEffect(() => {
@@ -54,26 +63,74 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [router]);
 
-  const converterParaWatts = (valor: number, unidade: string) => {
+  const converterParaWatts = (
+    valor: number,
+    unidade: string,
+    voltagem?: number,
+    corrente?: number,
+    fp?: number
+  ) => {
+    if (unidade === "V" && voltagem && corrente && fp) {
+      return voltagem * corrente * fp;
+    }
     switch (unidade) {
       case "W": return valor;
       case "kWh": return valor * 1000;
-      case "VA": return valor * 0.9;
-      case "V": return valor * 0.1;
       default: return valor;
     }
   };
+  
+  
+  
 
   const handleAdd = async () => {
-    if (!novo.nome || !novo.valor || !novo.horas || !user) return;
-    const watts = converterParaWatts(parseFloat(novo.valor), novo.unidade).toFixed(2);
-    const novoObj = { nome: novo.nome, watts, horas: novo.horas };
+    if (!novo.nome || !novo.horas || !user) return;
+  
+    let watts = 0;
+    let extra = {};
+  
+    if (novo.unidade === "V") {
+      const v = parseFloat(novo.voltagem);
+      const a = parseFloat(novo.corrente);
+      const fp = parseFloat(novo.fp) || 1;
+  
+      if (!v || !a) return;
+  
+      watts = converterParaWatts(0, "V", v, a, fp);
+  
+      extra = {
+        voltagem: v,
+        corrente: a,
+        fp,
+        hz: novo.hz
+      };
+    } else {
+      if (!novo.valor) return;
+      watts = converterParaWatts(parseFloat(novo.valor), novo.unidade);
+    }
+  
+    const novoObj = {
+      nome: novo.nome,
+      watts: watts.toFixed(2),
+      horas: novo.horas,
+      ...extra
+    };
+  
     const novaLista = [...eletronicos, novoObj];
     setEletronicos(novaLista);
-    setNovo({ nome: "", valor: "", unidade: "W", horas: "" });
+    setNovo({
+      nome: "",
+      valor: "",
+      unidade: "W",
+      horas: "",
+      voltagem: "",
+      corrente: "",
+      fp: "1",
+      hz: ""
+    });
     await setDoc(doc(db, "usuarios", user.uid), { eletronicos: novaLista }, { merge: true });
   };
-
+  
   const handleRemove = async (index: number) => {
     const novaLista = eletronicos.filter((_, i) => i !== index);
     setEletronicos(novaLista);
@@ -197,20 +254,55 @@ export default function Dashboard() {
   />
 
   <div className="flex flex-col sm:flex-row gap-3">
-    <input
-      type="number"
-      placeholder="quantidade de energia gasta"
-      className="w-full sm:flex-1 p-3 rounded-xl bg-[#1E1E2F] text-white"
-      value={novo.valor}
-      onChange={e => setNovo({ ...novo, valor: e.target.value })}
-    />
+    {novo.unidade === "V" ? (
+      <div className="flex flex-col gap-3 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input
+            type="number"
+            placeholder="Voltagem (V)"
+            className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+            value={novo.voltagem}
+            onChange={e => setNovo({ ...novo, voltagem: e.target.value })}
+          />
+          <input
+            type="number"
+            placeholder="Corrente (A)"
+            className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+            value={novo.corrente}
+            onChange={e => setNovo({ ...novo, corrente: e.target.value })}
+          />
+          <input
+            type="number"
+            placeholder="Fator de Potência"
+            className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+            value={novo.fp}
+            onChange={e => setNovo({ ...novo, fp: e.target.value })}
+          />
+        </div>
+        <input
+          type="number"
+          placeholder="Frequência (Hz) - opcional"
+          className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+          value={novo.hz}
+          onChange={e => setNovo({ ...novo, hz: e.target.value })}
+        />
+      </div>
+    ) : (
+      <input
+        type="number"
+        placeholder="Potência (ex: 1000)"
+        className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+        value={novo.valor}
+        onChange={e => setNovo({ ...novo, valor: e.target.value })}
+      />
+    )}
+
     <select
       className="w-full sm:w-28 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
       value={novo.unidade}
       onChange={e => setNovo({ ...novo, unidade: e.target.value })}
     >
       <option value="W">W</option>
-      <option value="VA">VA</option>
       <option value="V">Volts</option>
       <option value="kWh">kWh</option>
     </select>
@@ -231,6 +323,8 @@ export default function Dashboard() {
     Adicionar
   </button>
 </div>
+
+
 </div>
 
       {/* Lista de eletrônicos */}
