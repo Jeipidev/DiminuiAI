@@ -1,8 +1,6 @@
 export interface Meta {
     id: string;
     titulo: string;
-    progresso: number;
-    concluida: boolean;
     geradaEm?: Date;
   }
   
