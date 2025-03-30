@@ -1,8 +1,8 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../../../firebase';
-import { useRouter } from 'next/navigation';
+"use client";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "../../../firebase";
+import { useRouter } from "next/navigation";
 import {
   Chart,
   ArcElement,
@@ -10,36 +10,43 @@ import {
   CategoryScale,
   LinearScale,
   Tooltip,
-  Legend
-} from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
+  Legend,
+} from "chart.js";
+import { Bar, Pie } from "react-chartjs-2";
 import {
   getFirestore,
   doc,
   setDoc,
-  getDoc
-} from 'firebase/firestore';
+  getDoc,
+} from "firebase/firestore";
 
-Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+Chart.register(
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+);
 const db = getFirestore();
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [eletronicos, setEletronicos] = useState<any[]>([]);
-  const [tarifas, setTarifas] = useState<string[]>(['']);
-  const [novo, setNovo] = useState({ nome: '', valor: '', unidade: 'W', horas: '' });
+  const [tarifas, setTarifas] = useState<string[]>([""]);
+  const [novo, setNovo] = useState({ nome: "", valor: "", unidade: "W", horas: "" });
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      if (!u) return router.push('/login');
+      if (!u) return router.push("/login");
       setUser(u);
-      const docRef = doc(db, 'usuarios', u.uid);
+      const docRef = doc(db, "usuarios", u.uid);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
-        setTarifas(data.tarifas || ['']);
+        setTarifas(data.tarifas || [""]);
         setEletronicos(data.eletronicos || []);
       }
       setLoading(false);
@@ -49,11 +56,11 @@ export default function Dashboard() {
 
   const converterParaWatts = (valor: number, unidade: string) => {
     switch (unidade) {
-      case 'W': return valor;
-      case 'kW': return valor * 1000;
-      case 'VA': return valor * 0.9;
-      case 'V': return valor * 0.1;
-      case 'kWh': return (valor * 1000) / (30 * (parseFloat(novo.horas) || 1));
+      case "W": return valor;
+      case "kW": return valor * 1000;
+      case "VA": return valor * 0.9;
+      case "V": return valor * 0.1;
+      case "kWh": return (valor * 1000) / (30 * (parseFloat(novo.horas) || 1));
       default: return valor;
     }
   };
@@ -64,20 +71,20 @@ export default function Dashboard() {
     const novoObj = { nome: novo.nome, watts, horas: novo.horas };
     const novaLista = [...eletronicos, novoObj];
     setEletronicos(novaLista);
-    setNovo({ nome: '', valor: '', unidade: 'W', horas: '' });
-    await setDoc(doc(db, 'usuarios', user.uid), { eletronicos: novaLista }, { merge: true });
+    setNovo({ nome: "", valor: "", unidade: "W", horas: "" });
+    await setDoc(doc(db, "usuarios", user.uid), { eletronicos: novaLista }, { merge: true });
   };
 
   const handleRemove = async (index: number) => {
     const novaLista = eletronicos.filter((_, i) => i !== index);
     setEletronicos(novaLista);
-    await setDoc(doc(db, 'usuarios', user.uid), { eletronicos: novaLista }, { merge: true });
+    await setDoc(doc(db, "usuarios", user.uid), { eletronicos: novaLista }, { merge: true });
   };
 
   const handleEditHoras = async (index: number, horas: string) => {
     const novaLista = eletronicos.map((item, i) => i === index ? { ...item, horas } : item);
     setEletronicos(novaLista);
-    await setDoc(doc(db, 'usuarios', user.uid), { eletronicos: novaLista }, { merge: true });
+    await setDoc(doc(db, "usuarios", user.uid), { eletronicos: novaLista }, { merge: true });
   };
 
   const handleTarifaChange = (i: number, value: string) => {
@@ -86,12 +93,12 @@ export default function Dashboard() {
   };
 
   const handleAddTarifa = () => {
-    setTarifas([...tarifas, '']);
+    setTarifas([...tarifas, ""]);
   };
 
   const handleSalvarTarifas = async () => {
     if (user) {
-      await setDoc(doc(db, 'usuarios', user.uid), { tarifas }, { merge: true });
+      await setDoc(doc(db, "usuarios", user.uid), { tarifas }, { merge: true });
     }
   };
 
@@ -103,9 +110,8 @@ export default function Dashboard() {
   const graficoConsumo = {
     labels: eletronicos.map(e => e.nome),
     datasets: [{
-      label: 'Consumo (kWh/mês)',
-      data: eletronicos.map(e =>
-        (parseFloat(e.watts) * parseFloat(e.horas) * 30 / 1000)),
+      label: 'Consumo (kWh/m\u00eas)',
+      data: eletronicos.map(e => (parseFloat(e.watts) * parseFloat(e.horas) * 30 / 1000)),
       backgroundColor: '#00BFFF'
     }]
   };
@@ -121,28 +127,36 @@ export default function Dashboard() {
 
   const sair = async () => {
     await signOut(auth);
-    router.push('/');
+    router.push("/");
   };
 
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-[#0D1117] text-white p-6 sm:p-10 font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10">
-        <h1 className="text-4xl font-bold text-[#00BFFF] drop-shadow-[0_0_12px_#00BFFF]">
-          Olá, {user?.displayName || user.email}
-        </h1>
-        <button
-          onClick={sair}
-          className="px-5 py-3 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
-        >
-          Sair
-        </button>
-      </div>
+    <>
+      <header className="fixed top-0 left-0 w-full z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center justify-between px-6 sm:px-10 py-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#00BFFF] drop-shadow-[0_0_12px_#00BFFF]">
+            Olá, {user?.displayName || user.email}
+          </h1>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/dashboard/tutorial')}
+              className="px-4 py-2 text-sm bg-[#1E90FF] text-white rounded hover:bg-[#187bcd] transition"
+            >
+              Tutorial
+            </button>
+            <button
+              onClick={sair}
+              className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      </header>
 
-      {/* Tarifas + Adicionar eletrônico */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-10">
+      <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white my-10 p-4 sm:p-6 md:p-10 font-sans space-y-10">
         {/* Tarifas */}
         <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
           <h2 className="text-xl mb-3 font-semibold text-[#00BFFF]">Tarifas de Luz (R$/kWh)</h2>
@@ -175,54 +189,54 @@ export default function Dashboard() {
         </div>
 
         {/* Formulário novo eletrônico */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
-          <h2 className="text-xl mb-3 font-semibold text-[#00BFFF]">Adicionar Eletrônico</h2>
-          <div className="grid gap-3">
-            <input
-              placeholder="Nome"
-              className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-              value={novo.nome}
-              onChange={e => setNovo({ ...novo, nome: e.target.value })}
-            />
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Valor"
-                className="flex-1 p-3 rounded-xl bg-[#1E1E2F] text-white"
-                value={novo.valor}
-                onChange={e => setNovo({ ...novo, valor: e.target.value })}
-              />
-              <select
-                className="w-28 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-                value={novo.unidade}
-                onChange={e => setNovo({ ...novo, unidade: e.target.value })}
-              >
-                <option value="W">W</option>
-                <option value="kW">kW</option>
-                <option value="VA">VA</option>
-                <option value="V">Volts</option>
-                <option value="kWh">kWh</option>
-              </select>
-            </div>
-            <input
-              type="number"
-              placeholder="Horas/dia"
-              className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-              value={novo.horas}
-              onChange={e => setNovo({ ...novo, horas: e.target.value })}
-            />
-            <button
-              onClick={handleAdd}
-              className="w-full px-6 py-3 bg-[#00BFFF] text-black rounded-2xl font-semibold shadow-xl hover:scale-105 transition drop-shadow-[0_0_8px_#00BFFF]"
-            >
-              Adicionar
-            </button>
-          </div>
-        </div>
-      </div>
+        <div className="flex flex-col gap-4">
+  <input
+    placeholder="Nome"
+    className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+    value={novo.nome}
+    onChange={e => setNovo({ ...novo, nome: e.target.value })}
+  />
+
+  <div className="flex flex-col sm:flex-row gap-3">
+    <input
+      type="number"
+      placeholder="quantidade de energia gasta"
+      className="w-full sm:flex-1 p-3 rounded-xl bg-[#1E1E2F] text-white"
+      value={novo.valor}
+      onChange={e => setNovo({ ...novo, valor: e.target.value })}
+    />
+    <select
+      className="w-full sm:w-28 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+      value={novo.unidade}
+      onChange={e => setNovo({ ...novo, unidade: e.target.value })}
+    >
+      <option value="W">W</option>
+      <option value="kW">kW</option>
+      <option value="VA">VA</option>
+      <option value="V">Volts</option>
+      <option value="kWh">kWh</option>
+    </select>
+  </div>
+
+  <input
+    type="number"
+    placeholder="Horas/dia"
+    className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+    value={novo.horas}
+    onChange={e => setNovo({ ...novo, horas: e.target.value })}
+  />
+
+  <button
+    onClick={handleAdd}
+    className="w-full px-6 py-3 bg-[#00BFFF] text-black rounded-2xl font-semibold shadow-xl hover:scale-105 transition drop-shadow-[0_0_8px_#00BFFF]"
+  >
+    Adicionar
+  </button>
+</div>
+</div>
 
       {/* Lista de eletrônicos */}
-      <div className="mb-10">
+      <div className="mb-10 p-4 sm:p-6 md:p-10 font-sans space-y-10 bg-[#0D1117] text-white">
         <h2 className="text-xl font-semibold text-[#00BFFF] mb-4">Seus Eletrônicos</h2>
         <div className="space-y-4">
           {eletronicos.map((el, i) => (
@@ -249,6 +263,7 @@ export default function Dashboard() {
       </div>
 
       {/* Resultado final */}
+      <div className="mb-10 p-4 sm:p-6 md:p-10 font-sans space-y-10 bg-[#0D1117] text-white">
       <div className="text-lg mb-10 bg-[#161B22] p-6 rounded-xl">
         <p className="mb-2">
           Consumo total estimado: <span className="text-[#00BFFF] font-bold">{consumoTotal.toFixed(2)} kWh/mês</span>
@@ -256,6 +271,7 @@ export default function Dashboard() {
         <p>
           Custo mensal estimado: <span className="text-[#00BFFF] font-bold">R$ {custoTotal.toFixed(2)}</span>
         </p>
+      </div>
       </div>
 
       {/* Gráficos */}
@@ -269,6 +285,6 @@ export default function Dashboard() {
           <Pie data={graficoUso} options={{ responsive: true }} />
         </div>
       </div>
-    </div>
+    </>
   );
 }
