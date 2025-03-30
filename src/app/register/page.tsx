@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } fro
 import { auth } from '../../../firebase';
 import AnimatedBackground from '../../components/AnimatedBackground';
 
+
 export default function Register() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -42,6 +43,8 @@ export default function Register() {
   return (
     <>
       <AnimatedBackground />
+
+
       <div className="relative z-10 grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 sm:p-20 bg-black/70 text-white font-sans">
         <main className="row-start-2 flex w-full max-w-xl flex-col items-center gap-6 rounded-2xl border border-white/30 bg-black/30 p-8 text-center shadow-[0_0_24px_#00BFFF50] backdrop-blur-lg sm:items-start sm:text-left">
           <motion.h1

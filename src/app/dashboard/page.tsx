@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../../../firebase";
 import { useRouter } from "next/navigation";
+import Header from "@/components/Header";
 import {
   Chart,
   ArcElement,
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [eletronicos, setEletronicos] = useState<any[]>([]);
   const [tarifas, setTarifas] = useState<string[]>([""]);
+  const [menuAberto, setMenuAberto] = useState(false);
   const [novo, setNovo] = useState({
     nome: "",
     valor: "",
@@ -190,28 +192,11 @@ export default function Dashboard() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-white/10">
-        <div className="flex items-center justify-between px-6 sm:px-10 py-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-[#00BFFF] drop-shadow-[0_0_12px_#00BFFF]">
-            Olá, {user?.displayName || user.email}
-          </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push('/dashboard/tutorial')}
-              className="px-4 py-2 text-sm bg-[#1E90FF] text-white rounded hover:bg-[#187bcd] transition"
-            >
-              Tutorial
-            </button>
-            <button
-              onClick={sair}
-              className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
-            >
-              Sair
-            </button>
-          </div>
-        </div>
-      </header>
+    
 
+<Header nome={user?.displayName || user.email}>
+</Header>
+      
       <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white my-10 p-4 sm:p-6 md:p-10 font-sans space-y-10">
         {/* Tarifas */}
         <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
