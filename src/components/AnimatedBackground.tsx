@@ -131,7 +131,7 @@ export default function AnimatedBackground() {
     return (
         <canvas
             id="bg-canvas"
-            className="fixed inset-0 z-0 pointer-events-none"
+            className="fixed inset-0 z-0 pointer-events-none bg-gray-900"
         ></canvas>
     );
 }

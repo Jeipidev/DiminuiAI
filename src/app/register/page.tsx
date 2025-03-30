@@ -1,13 +1,10 @@
-'use client'
-import { useState } from 'react';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../../../firebase';
+'use client';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../../../firebase';
 import AnimatedBackground from '../../components/AnimatedBackground';
-import { onAuthStateChanged } from 'firebase/auth';
-import { useEffect } from 'react';
-
 
 export default function Register() {
   const [nome, setNome] = useState('');
@@ -38,20 +35,20 @@ export default function Register() {
       }
       router.push('/dashboard');
     } catch (error: any) {
-      setErro(error.message);
+      setErro('Erro ao registrar: ' + error.message);
     }
   };
 
   return (
     <>
       <AnimatedBackground />
-      <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 bg-background text-white">
-        <main className="flex flex-col gap-6 row-start-2 items-center sm:items-start text-center sm:text-left w-full max-w-xl border border-white/30 rounded-2xl p-8 shadow-[0_0_24px_#00BFFF50]">
+      <div className="relative z-10 grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 sm:p-20 bg-black/70 text-white font-sans">
+        <main className="row-start-2 flex w-full max-w-xl flex-col items-center gap-6 rounded-2xl border border-white/30 bg-black/30 p-8 text-center shadow-[0_0_24px_#00BFFF50] backdrop-blur-lg sm:items-start sm:text-left">
           <motion.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-4xl font-bold text-primary drop-shadow-[0_0_12px_#00BFFF]"
+            className="text-4xl font-bold text-[#00BFFF] drop-shadow-[0_0_12px_#00BFFF]"
           >
             Registre-se
           </motion.h1>
@@ -59,47 +56,53 @@ export default function Register() {
           <input
             type="text"
             placeholder="Nome completo"
-            className="w-full p-3 rounded-xl border border-white/20 bg-card text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full rounded-xl border border-white/20 bg-white/10 p-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BFFF]/50"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
+            autoComplete="name"
           />
+
           <input
             type="email"
             placeholder="Email"
-            className="w-full p-3 rounded-xl border border-white/20 bg-card text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full rounded-xl border border-white/20 bg-white/10 p-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BFFF]/50"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
           />
+
           <div className="relative w-full">
             <input
               type={mostrarSenha ? 'text' : 'password'}
               placeholder="Senha"
-              className="w-full p-3 pr-12 rounded-xl border border-white/20 bg-card text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-xl border border-white/20 bg-white/10 p-3 pr-12 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BFFF]/50"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
+              autoComplete="new-password"
             />
-            <button
-              type="button"
-              onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-primary hover:underline"
-            >
-              {mostrarSenha ? 'Ocultar' : 'Ver'}
-            </button>
           </div>
+
           <input
             type="password"
             placeholder="Confirmar senha"
-            className="w-full p-3 rounded-xl border border-white/20 bg-card text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full rounded-xl border border-white/20 bg-white/10 p-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BFFF]/50"
             value={confirmar}
             onChange={(e) => setConfirmar(e.target.value)}
+            autoComplete="new-password"
           />
+
           <button
             onClick={handleRegister}
-            className=" w-full px-6 py-3 text-black bg-[#00BFFF] rounded-2xl font-semibold shadow-xl hover:scale-105 transition drop-shadow-[0_0_8px_#00BFFF]"
+            className="w-full rounded-2xl bg-[#00BFFF] px-6 py-3 font-semibold text-black shadow-xl transition hover:scale-105 drop-shadow-[0_0_8px_#00BFFF]"
           >
             Registrar
           </button>
-          {erro && <p className="text-red-500">{erro}</p>}
+
+          {erro && (
+            <p className="w-full text-center text-sm text-red-500 sm:text-left">
+              {erro}
+            </p>
+          )}
         </main>
       </div>
     </>
