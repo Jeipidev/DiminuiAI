@@ -31,22 +31,42 @@ Chart.register(
 );
 const db = getFirestore();
 
+// A interface agora inclui a propriedade "unidade"
+interface Eletronico {
+  nome: string;
+  watts: string; // valor convertido (em W ou em kWh, conforme a unidade)
+  horas: string;
+  unidade: string; // "W" ou "kWh" (ou "V" que é convertido para W)
+  voltagem?: number;
+  corrente?: number;
+  fp?: number;
+  hz?: string;
+  tipoTarifa?: string;
+}
+
+interface Tarifas {
+  [key: string]: string;
+}
+
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<any>(null);
-  const [eletronicos, setEletronicos] = useState<any[]>([]);
-  const [tarifas, setTarifas] = useState<string[]>([""]);
-  const [menuAberto, setMenuAberto] = useState(false);
+  const [eletronicos, setEletronicos] = useState<Eletronico[]>([]);
+  const [tarifas, setTarifas] = useState<Tarifas>({});
+  // Aqui a lista de campos (chaves) de tarifa é armazenada e também persistida no Firestore
+  const [tiposCampos, setTiposCampos] = useState<string[]>(["0_30_te"]);
+  const [tarifasPreferencia, setTarifasPreferencia] = useState<"te" | "tsud">("te");
+
   const [novo, setNovo] = useState({
     nome: "",
     valor: "",
-    unidade: "W",
+    unidade: "W", // "W", "kWh" ou "V"
     horas: "",
     voltagem: "",
     hz: "",
     fp: "1",
     corrente: ""
-  });  
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -57,82 +77,122 @@ export default function Dashboard() {
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
-        setTarifas(data.tarifas || [""]);
+        setTarifas(data.tarifas || {});
         setEletronicos(data.eletronicos || []);
+        // Carrega a lista de campos de tarifa ou usa o valor padrão
+        setTiposCampos(data.tiposCampos || ["0_30_te"]);
       }
       setLoading(false);
     });
     return () => unsubscribe();
   }, [router]);
 
+  // Função para converter o valor informado para watts (ou manter se já estiver em kWh)
   const converterParaWatts = (
     valor: number,
     unidade: string,
     voltagem?: number,
     corrente?: number,
     fp?: number
-  ) => {
+  ): number => {
     if (unidade === "V" && voltagem && corrente && fp) {
       return voltagem * corrente * fp;
     }
     switch (unidade) {
-      case "W": return valor;
-      case "kWh": return valor * 1000;
-      default: return valor;
+      case "W": 
+        return valor;
+      case "kWh": 
+        return valor; // valor informado já está em kWh/h
+      default: 
+        return valor;
     }
   };
-  
-  
-  
+
+  // Identifica a faixa de tarifa com base no consumo mensal (em kWh)
+  const identificarTarifa = (kwh: number, preferencia: "te" | "tsud" = "te"): string => {
+    if (kwh <= 30) return `0_30_${preferencia}`;
+    if (kwh <= 100) return `30_100_${preferencia}`;
+    return `100_220_${preferencia}`;
+  };
 
   const handleAdd = async () => {
     if (!novo.nome || !novo.horas || !user) return;
-  
-    let watts = 0;
+
+    let valorConvertido = 0; // valor em W ou em kWh, conforme a unidade
+    let consumoMensal = 0; // em kWh/mês
     let extra = {};
-  
+
     if (novo.unidade === "V") {
       const v = parseFloat(novo.voltagem);
       const a = parseFloat(novo.corrente);
       const fp = parseFloat(novo.fp) || 1;
-  
       if (!v || !a) return;
-  
-      watts = converterParaWatts(0, "V", v, a, fp);
-  
-      extra = {
-        voltagem: v,
-        corrente: a,
-        fp,
-        hz: novo.hz
-      };
-    } else {
-      if (!novo.valor) return;
-      watts = converterParaWatts(parseFloat(novo.valor), novo.unidade);
+      valorConvertido = converterParaWatts(0, "V", v, a, fp);
+      consumoMensal = (valorConvertido * parseFloat(novo.horas) * 30) / 1000;
+      extra = { voltagem: v, corrente: a, fp, hz: novo.hz };
+    } else if (novo.unidade === "kWh") {
+      // Se for kWh, consideramos que é o consumo por hora
+      valorConvertido = parseFloat(novo.valor);
+      consumoMensal = valorConvertido * parseFloat(novo.horas);
+    } else { // unidade "W"
+      valorConvertido = converterParaWatts(parseFloat(novo.valor), "W");
+      consumoMensal = (valorConvertido * parseFloat(novo.horas) * 30) / 1000;
     }
-  
-    const novoObj = {
+
+    const tipoTarifa = identificarTarifa(consumoMensal, tarifasPreferencia || "te");
+
+    const novoObj: Eletronico = {
       nome: novo.nome,
-      watts: watts.toFixed(2),
+      watts: valorConvertido.toFixed(2),
       horas: novo.horas,
+      unidade: novo.unidade,
+      tipoTarifa,
       ...extra
     };
-  
+
     const novaLista = [...eletronicos, novoObj];
     setEletronicos(novaLista);
-    setNovo({
-      nome: "",
-      valor: "",
-      unidade: "W",
-      horas: "",
-      voltagem: "",
-      corrente: "",
-      fp: "1",
-      hz: ""
-    });
+    setNovo({ nome: "", valor: "", unidade: "W", horas: "", voltagem: "", corrente: "", fp: "1", hz: "" });
     await setDoc(doc(db, "usuarios", user.uid), { eletronicos: novaLista }, { merge: true });
   };
-  
+
+  // Atualiza o campo de tarifa e salva a alteração no Firestore
+  const handleValorTarifaChange = async (index: number, valor: string) => {
+    const chave = tiposCampos[index];
+    const novaTarifas = { ...tarifas, [chave]: valor };
+    setTarifas(novaTarifas);
+    if (user) {
+      await setDoc(doc(db, "usuarios", user.uid), { tarifas: novaTarifas }, { merge: true });
+    }
+  };
+
+  // Atualiza o tipo (chave) do campo de tarifa e persiste
+  const handleTipoChange = async (index: number, novoTipo: string) => {
+    const atualizados = [...tiposCampos];
+    atualizados[index] = novoTipo;
+    setTiposCampos(atualizados);
+    if (user) {
+      await setDoc(doc(db, "usuarios", user.uid), { tiposCampos: atualizados }, { merge: true });
+    }
+  };
+
+  // Adiciona um novo campo de tarifa com uma chave única e salva no Firestore
+  const handleAddTipoCampo = async () => {
+    const novoTipo = `0_30_te`;
+    const novosCampos = [...tiposCampos, novoTipo];
+    setTiposCampos(novosCampos);
+    if (user) {
+      await setDoc(doc(db, "usuarios", user.uid), { tiposCampos: novosCampos }, { merge: true });
+    }
+  };
+
+  // Função para salvar (ou atualizar) as tarifas e os campos de tarifa
+  const handleSalvarTarifas = async (): Promise<void> => {
+    if (user) {
+      await setDoc(doc(db, "usuarios", user.uid), { tarifas, tiposCampos }, { merge: true });
+    }
+  };
+
   const handleRemove = async (index: number) => {
     const novaLista = eletronicos.filter((_, i) => i !== index);
     setEletronicos(novaLista);
@@ -145,31 +205,30 @@ export default function Dashboard() {
     await setDoc(doc(db, "usuarios", user.uid), { eletronicos: novaLista }, { merge: true });
   };
 
-  const handleTarifaChange = (i: number, value: string) => {
-    const novaTarifas = tarifas.map((t, idx) => idx === i ? value : t);
-    setTarifas(novaTarifas);
-  };
-
-  const handleAddTarifa = () => {
-    setTarifas([...tarifas, ""]);
-  };
-
-  const handleSalvarTarifas = async () => {
-    if (user) {
-      await setDoc(doc(db, "usuarios", user.uid), { tarifas }, { merge: true });
+  // Cálculo do consumo mensal e custo com base na unidade e tarifa cadastrada
+  const consumoTotal = eletronicos.reduce((total, e) => {
+    let kwhMes = 0;
+    if (e.unidade === "kWh") {
+      kwhMes = parseFloat(e.watts) * parseFloat(e.horas);
+    } else {
+      kwhMes = (parseFloat(e.watts) * parseFloat(e.horas) * 30) / 1000;
     }
-  };
-
-  const mediaTarifa = tarifas.reduce((sum, t) => sum + (parseFloat(t) || 0), 0) / tarifas.length;
-  const consumoTotal = eletronicos.reduce((total, e) =>
-    total + (parseFloat(e.watts) * parseFloat(e.horas) * 30 / 1000), 0);
-  const custoTotal = mediaTarifa ? consumoTotal * mediaTarifa : 0;
+    const tarifaStr = tarifas[e.tipoTarifa || ""] || "0";
+    const tarifa = parseFloat(tarifaStr.replace(",", "."));
+    return total + kwhMes * tarifa;
+  }, 0);
 
   const graficoConsumo = {
     labels: eletronicos.map(e => e.nome),
     datasets: [{
-      label: 'Consumo (kWh/m\u00eas)',
-      data: eletronicos.map(e => (parseFloat(e.watts) * parseFloat(e.horas) * 30 / 1000)),
+      label: 'Consumo (kWh/mês)',
+      data: eletronicos.map(e => {
+        if (e.unidade === "kWh") {
+          return parseFloat(e.watts) * parseFloat(e.horas);
+        } else {
+          return (parseFloat(e.watts) * parseFloat(e.horas) * 30) / 1000;
+        }
+      }),
       backgroundColor: '#00BFFF'
     }]
   };
@@ -183,7 +242,7 @@ export default function Dashboard() {
     }]
   };
 
-  const sair = async () => {
+  const sair = async (): Promise<void> => {
     await signOut(auth);
     router.push("/");
   };
@@ -191,142 +250,149 @@ export default function Dashboard() {
   if (loading) return null;
 
   return (
-    <>
-    
+    <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white p-4 space-y-10">
+      <Header nome={user?.displayName || user.email} />
+      <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mt-4">
+  <h2 className="text-xl font-semibold text-[#00BFFF]">Debug - Tarifas Configuradas</h2>
+  <pre className="text-sm text-gray-300">
+    {JSON.stringify(tarifas, null, 2)}
+  </pre>
+</div>
 
-<Header nome={user?.displayName || user.email}>
-</Header>
-      
-      <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white my-10 p-4 sm:p-6 md:p-10 font-sans space-y-10">
-        {/* Tarifas */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
-          <h2 className="text-xl mb-3 font-semibold text-[#00BFFF]">Tarifas de Luz (R$/kWh)</h2>
-          {tarifas.map((tarifa, i) => (
-            <div key={i} className="relative">
-              <input
-                type="number"
-                placeholder={`Tarifa ${i + 1}`}
-                className="w-full mb-2 p-3 rounded-xl border border-white/40 bg-[#1E1E2F] text-white placeholder:text-gray-400"
-                value={tarifa}
-                onChange={e => handleTarifaChange(i, e.target.value)}
-              />
-              <span className="absolute right-4 top-3 text-gray-300">kWh</span>
-            </div>
-          ))}
-          <div className="flex flex-col gap-3 mt-4">
-            <button
-              onClick={handleAddTarifa}
-              className="w-full px-6 py-3 bg-[#00BFFF] text-black rounded-2xl font-semibold shadow-xl hover:scale-105 transition drop-shadow-[0_0_8px_#00BFFF]"
+
+      <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
+        <h2 className="text-xl mb-4 font-semibold text-[#00BFFF]">Cadastro de Tarifas</h2>
+        {tiposCampos.map((tipo, i) => (
+          <div key={i} className="flex items-center gap-4 mb-3">
+            <select
+              value={tipo}
+              onChange={(e) => handleTipoChange(i, e.target.value)}
+              className="w-40 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
             >
-              Adicionar tarifa
-            </button>
-            <button
-              onClick={handleSalvarTarifas}
-              className="py-2 px-4 bg-green-500 text-black rounded-xl hover:scale-105 transition drop-shadow-[0_0_6px_#00FFBF]"
-            >
-              Salvar tarifas
-            </button>
+              <option value="0_30_te">0-30 kWh (TE)</option>
+              <option value="0_30_tsud">0-30 kWh (TSUD)</option>
+              <option value="30_100_te">30-100 kWh (TE)</option>
+              <option value="30_100_tsud">30-100 kWh (TSUD)</option>
+              <option value="100_220_te">100-220 kWh (TE)</option>
+              <option value="100_220_tsud">100-220 kWh (TSUD)</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Valor R$/kWh"
+              className="flex-1 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+              value={tarifas[tipo] || ""}
+              onChange={(e) => handleValorTarifaChange(i, e.target.value)}
+            />
           </div>
-        </div>
-
-        {/* Formulário novo eletrônico */}
-        <div className="flex flex-col gap-4">
-  <input
-    placeholder="Nome"
-    className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
-    value={novo.nome}
-    onChange={e => setNovo({ ...novo, nome: e.target.value })}
-  />
-
-  <div className="flex flex-col sm:flex-row gap-3">
-    {novo.unidade === "V" ? (
-      <div className="flex flex-col gap-3 w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input
-            type="number"
-            placeholder="Voltagem (V)"
-            className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-            value={novo.voltagem}
-            onChange={e => setNovo({ ...novo, voltagem: e.target.value })}
-          />
-          <input
-            type="number"
-            placeholder="Corrente (A)"
-            className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-            value={novo.corrente}
-            onChange={e => setNovo({ ...novo, corrente: e.target.value })}
-          />
-          <input
-            type="number"
-            placeholder="Fator de Potência"
-            className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-            value={novo.fp}
-            onChange={e => setNovo({ ...novo, fp: e.target.value })}
-          />
-        </div>
-        <input
-          type="number"
-          placeholder="Frequência (Hz) - opcional"
-          className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-          value={novo.hz}
-          onChange={e => setNovo({ ...novo, hz: e.target.value })}
-        />
+        ))}
+        <button
+          onClick={handleAddTipoCampo}
+          className="w-full px-4 py-2 bg-[#00BFFF] text-black rounded-xl font-semibold mt-3 hover:scale-105 transition"
+        >
+          Adicionar novo tipo de consumo
+        </button>
+        <button
+          onClick={handleSalvarTarifas}
+          className="w-full px-4 py-2 mt-4 bg-green-500 text-black rounded-xl hover:scale-105 transition"
+        >
+          Salvar Tarifas
+        </button>
       </div>
-    ) : (
-      <input
-        type="number"
-        placeholder="Potência (ex: 1000)"
-        className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
-        value={novo.valor}
-        onChange={e => setNovo({ ...novo, valor: e.target.value })}
-      />
-    )}
 
-    <select
-      className="w-full sm:w-28 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-      value={novo.unidade}
-      onChange={e => setNovo({ ...novo, unidade: e.target.value })}
-    >
-      <option value="W">W</option>
-      <option value="V">Volts</option>
-      <option value="kWh">kWh</option>
-    </select>
-  </div>
+      {/* Adicionar Aparelho */}
+      <div className="bg-[#161B22] p-6 rounded-2xl shadow-md space-y-4">
+        <h2 className="text-xl font-semibold text-[#00BFFF]">Adicionar Aparelho</h2>
+        <input
+          className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+          placeholder="Nome do Aparelho"
+          value={novo.nome}
+          onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
+        />
+        {novo.unidade === "V" ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input
+              className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+              placeholder="Voltagem (V)"
+              type="number"
+              value={novo.voltagem}
+              onChange={(e) => setNovo({ ...novo, voltagem: e.target.value })}
+            />
+            <input
+              className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+              placeholder="Corrente (A)"
+              type="number"
+              value={novo.corrente}
+              onChange={(e) => setNovo({ ...novo, corrente: e.target.value })}
+            />
+            <input
+              className="p-3 rounded-xl bg-[#1E1E2F] text-white"
+              placeholder="Fator de Potência"
+              type="number"
+              value={novo.fp}
+              onChange={(e) => setNovo({ ...novo, fp: e.target.value })}
+            />
+          </div>
+        ) : (
+          <input
+            className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+            placeholder={novo.unidade === "kWh" ? "Consumo (kWh)" : "Potência (ex: 1000)"}
+            type="number"
+            value={novo.valor}
+            onChange={(e) => setNovo({ ...novo, valor: e.target.value })}
+          />
+        )}
+        <div className="flex gap-4">
+          <select
+            className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+            value={novo.unidade}
+            onChange={(e) => setNovo({ ...novo, unidade: e.target.value })}
+          >
+            <option value="W">W</option>
+            <option value="kWh">kWh</option>
+            <option value="V">Volts</option>
+          </select>
+          <input
+            className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+            placeholder="Horas/dia"
+            type="number"
+            value={novo.horas}
+            onChange={(e) => setNovo({ ...novo, horas: e.target.value })}
+          />
+        </div>
+        <button
+          onClick={handleAdd}
+          className="w-full px-6 py-3 bg-[#00BFFF] text-black rounded-2xl font-semibold shadow hover:scale-105 transition"
+        >
+          Adicionar Aparelho
+        </button>
+      </div>
 
-  <input
-    type="number"
-    placeholder="Horas/dia"
-    className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
-    value={novo.horas}
-    onChange={e => setNovo({ ...novo, horas: e.target.value })}
-  />
-
-  <button
-    onClick={handleAdd}
-    className="w-full px-6 py-3 bg-[#00BFFF] text-black rounded-2xl font-semibold shadow-xl hover:scale-105 transition drop-shadow-[0_0_8px_#00BFFF]"
-  >
-    Adicionar
-  </button>
-</div>
-
-
-</div>
-
-      {/* Lista de eletrônicos */}
-      <div className="mb-10 p-4 sm:p-6 md:p-10 font-sans space-y-10 bg-[#0D1117] text-white">
-        <h2 className="text-xl font-semibold text-[#00BFFF] mb-4">Seus Eletrônicos</h2>
-        <div className="space-y-4">
-          {eletronicos.map((el, i) => (
+      {/* Lista de Aparelhos */}
+      <div className="bg-[#161B22] p-6 rounded-2xl shadow-md space-y-4">
+        <h2 className="text-xl font-semibold text-[#00BFFF]">Seus Aparelhos</h2>
+        {eletronicos.map((el, i) => {
+          let kwhMes = 0;
+          if (el.unidade === "kWh") {
+            kwhMes = parseFloat(el.watts) * parseFloat(el.horas);
+          } else {
+            kwhMes = (parseFloat(el.watts) * parseFloat(el.horas) * 30) / 1000;
+          }
+          const tarifaStr = tarifas[el.tipoTarifa || ""] || "0";
+          const tarifa = parseFloat(tarifaStr.replace(",", "."));
+          const custo = kwhMes * tarifa;
+          return (
             <div key={i} className="flex items-center gap-4 bg-[#1E1E2F] p-4 rounded-xl">
               <div className="flex-1">
                 <p className="text-lg font-bold">{el.nome}</p>
-                <p className="text-sm text-gray-300">{el.watts}W</p>
+                <p className="text-sm text-gray-300">
+                  {el.watts}{el.unidade} - {el.tipoTarifa} - {kwhMes.toFixed(2)} kWh/mês - R$ {custo.toFixed(2)}
+                </p>
               </div>
               <input
                 type="number"
                 className="w-24 p-2 rounded bg-[#111827] text-white"
                 value={el.horas}
-                onChange={e => handleEditHoras(i, e.target.value)}
+                onChange={(e) => handleEditHoras(i, e.target.value)}
               />
               <button
                 onClick={() => handleRemove(i)}
@@ -335,23 +401,18 @@ export default function Dashboard() {
                 Remover
               </button>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Resultado final */}
-      <div className="mb-10 p-4 sm:p-6 md:p-10 font-sans space-y-10 bg-[#0D1117] text-white">
-      <div className="text-lg mb-10 bg-[#161B22] p-6 rounded-xl">
+      {/* Resultado Total */}
+      <div className="text-lg bg-[#161B22] p-6 rounded-xl">
         <p className="mb-2">
-          Consumo total estimado: <span className="text-[#00BFFF] font-bold">{consumoTotal.toFixed(2)} kWh/mês</span>
+          Custo total estimado:
+          <span className="text-[#00BFFF] font-bold"> R$ {consumoTotal.toFixed(2)}</span>
         </p>
-        <p>
-          Custo mensal estimado: <span className="text-[#00BFFF] font-bold">R$ {custoTotal.toFixed(2)}</span>
-        </p>
-      </div>
       </div>
 
-      {/* Gráficos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className="bg-[#161B22] p-6 rounded-xl shadow-lg">
           <h3 className="text-lg mb-4 font-semibold text-[#00BFFF]">Consumo por Aparelho</h3>
@@ -362,6 +423,6 @@ export default function Dashboard() {
           <Pie data={graficoUso} options={{ responsive: true }} />
         </div>
       </div>
-    </>
+    </div>
   );
 }
