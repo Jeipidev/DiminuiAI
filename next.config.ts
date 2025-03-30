@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
     eslint: {
       ignoreDuringBuilds: true,
     },
+    future: { webpack5: true, }
   
 };
 
