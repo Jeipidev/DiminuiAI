@@ -95,9 +95,11 @@ export default function PerfilPage() {
           case 'tarifas':
             return (data.tarifas?.filter((t: string) => parseFloat(t) > 0).length || 0) >= parseInt(c.condicao);
           case 'economia':
-            return (data.simulacaoEconomia || 0) >= parseFloat(c.condicao);
+            return (
+              data.economiaTotalReais || 0) >= parseFloat(c.condicao
+            );
           case 'consumo':
-            return (data.simulacaoConsumo || 0) >= parseFloat(c.condicao);
+            return (data.economiaTotalKwh || 0) >= parseFloat(c.condicao);
           case 'combo':
             return !!(data.eletronicos?.length && data.tarifas?.length && data.metas);
           case 'semanal':
@@ -108,6 +110,8 @@ export default function PerfilPage() {
       })
       .map(c => c.id);
   };
+  
+  
 
   return (
     <>
