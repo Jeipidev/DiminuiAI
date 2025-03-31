@@ -92,8 +92,9 @@ export default function PerfilPage() {
             return (data.historicoConcluidas || 0) >= parseInt(c.condicao);
           case 'eletronicos':
             return (data.eletronicos?.length || 0) >= parseInt(c.condicao);
-          case 'tarifas':
-            return (data.tarifas?.filter((t: string) => parseFloat(t) > 0).length || 0) >= parseInt(c.condicao);
+            case 'tarifas':
+              return (Object.values(data.tarifas || {}).filter((t) => parseFloat(t as string) > 0).length || 0) >= parseInt(c.condicao);
+            
           case 'economia':
             return (
               data.economiaTotalReais || 0) >= parseFloat(c.condicao
