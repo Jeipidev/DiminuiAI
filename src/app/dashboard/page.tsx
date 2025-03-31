@@ -253,11 +253,6 @@ export default function Dashboard() {
     <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white p-4 space-y-10">
       <Header nome={user?.displayName || user.email} />
       <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mt-4">
-  <h2 className="text-xl font-semibold text-[#00BFFF]">Debug - Tarifas Configuradas</h2>
-  <pre className="text-sm text-gray-300">
-    {JSON.stringify(tarifas, null, 2)}
-  </pre>
-</div>
 
 
       <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
