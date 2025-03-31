@@ -255,30 +255,34 @@ export default function Dashboard() {
 
 
       <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
-        <h2 className="text-xl mb-4 font-semibold text-[#00BFFF]">Cadastro de Tarifas</h2>
-        {tiposCampos.map((tipo, i) => (
-          <div key={i} className="flex items-center gap-4 mb-3">
-            <select
-              value={tipo}
-              onChange={(e) => handleTipoChange(i, e.target.value)}
-              className="w-40 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-            >
-              <option value="0_30_te">0-30 kWh (TE)</option>
-              <option value="0_30_tsud">0-30 kWh (TSUD)</option>
-              <option value="30_100_te">30-100 kWh (TE)</option>
-              <option value="30_100_tsud">30-100 kWh (TSUD)</option>
-              <option value="100_220_te">100-220 kWh (TE)</option>
-              <option value="100_220_tsud">100-220 kWh (TSUD)</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Valor R$/kWh"
-              className="flex-1 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-              value={tarifas[tipo] || ""}
-              onChange={(e) => handleValorTarifaChange(i, e.target.value)}
-            />
-          </div>
-        ))}
+      <h2 className="text-xl mb-4 font-semibold text-[#00BFFF]">Cadastro de Tarifas</h2>
+{tiposCampos.map((tipo, i) => (
+  <div
+    key={i}
+    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-3"
+  >
+    <select
+      value={tipo}
+      onChange={(e) => handleTipoChange(i, e.target.value)}
+      className="w-full sm:w-40 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+    >
+      <option value="0_30_te">0-30 kWh (TE)</option>
+      <option value="0_30_tsud">0-30 kWh (TSUD)</option>
+      <option value="30_100_te">30-100 kWh (TE)</option>
+      <option value="30_100_tsud">30-100 kWh (TSUD)</option>
+      <option value="100_220_te">100-220 kWh (TE)</option>
+      <option value="100_220_tsud">100-220 kWh (TSUD)</option>
+    </select>
+    <input
+      type="number"
+      placeholder="Valor R$/kWh"
+      className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+      value={tarifas[tipo] || ""}
+      onChange={(e) => handleValorTarifaChange(i, e.target.value)}
+    />
+  </div>
+))}
+
         <button
           onClick={handleAddTipoCampo}
           className="w-full px-4 py-2 bg-[#00BFFF] text-black rounded-xl font-semibold mt-3 hover:scale-105 transition"
