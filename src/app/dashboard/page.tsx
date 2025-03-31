@@ -252,7 +252,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white p-4 space-y-10">
       <Header nome={user?.displayName || user.email} />
-      <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mt-4">
 
 
       <div className="bg-[#161B22] p-6 rounded-2xl shadow-md">
