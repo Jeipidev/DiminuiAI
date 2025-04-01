@@ -9,9 +9,6 @@ import Link from "next/link";
 import {
   FiTarget,
   FiAward,
-  FiCheckCircle,
-  FiHome,
-  FiSettings,
   FiDollarSign,
   FiBookOpen,
 } from "react-icons/fi";
@@ -281,4 +278,3 @@ function ComparisonCharts({ locations }: ComparisonChartsProps) {
   );
 }
 
-export { DashboardPage };
