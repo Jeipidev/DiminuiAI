@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { auth } from '../../../../firebase';
+import { auth } from '../../../firebase';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
-import { bancoDeMetas } from '../../../utils/bancometas';
-import { sortearNovaMeta, podeTrocarMeta } from '../../../utils/metaHelpers';
-import { Meta, Usadas, UsuarioData } from '../../../../types/meta';
+import { bancoDeMetas } from '../../utils/bancometas';
+import { sortearNovaMeta, podeTrocarMeta } from '../../utils/metaHelpers';
+import { Meta, Usadas, UsuarioData } from '../../../types/meta';
 import { motion } from 'framer-motion';
 import { FiTarget, FiCheckCircle } from 'react-icons/fi';
 import Header from '@/components/Header';
@@ -135,27 +135,28 @@ export default function MetasPage() {
             <div key={tipo} className="bg-[#161B22] p-6 rounded-xl">
               <h2 className="text-xl font-semibold mb-4">{titulo}</h2>
               <div className="space-y-3">
-                {metas.map(meta => (
-                  <div key={meta.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#1E1E2F] p-4 rounded">
-                    <div>
-                      <p className={`font-medium ${meta.concluida ? 'line-through text-gray-400' : ''}`}>
-                        {meta.titulo}
-                      </p>
-                      <div className="w-full bg-gray-700 rounded h-2 mt-2">
-                        <div className="bg-[#00BFFF] h-2 rounded" style={{ width: `${meta.progresso}%` }}></div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => concluirMeta(tipo, meta.id)}
-                      disabled={meta.concluida}
-                      className={`mt-3 sm:mt-0 sm:ml-4 px-4 py-2 rounded-lg text-sm font-medium transition ${meta.concluida
-                        ? 'bg-green-600 cursor-default'
-                        : 'bg-[#00BFFF] text-black hover:scale-105 drop-shadow-[0_0_6px_#00BFFF]'}`}
-                    >
-                      {meta.concluida ? 'Concluída' : 'Concluir'}
-                    </button>
-                  </div>
-                ))}
+              {metas.map((meta, index) => (
+  <div key={`${meta.id}-${index}`} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#1E1E2F] p-4 rounded">
+    <div>
+      <p className={`font-medium ${meta.concluida ? 'line-through text-gray-400' : ''}`}>
+        {meta.titulo}
+      </p>
+      <div className="w-full bg-gray-700 rounded h-2 mt-2">
+        <div className="bg-[#00BFFF] h-2 rounded" style={{ width: `${meta.progresso}%` }}></div>
+      </div>
+    </div>
+    <button
+      onClick={() => concluirMeta(tipo, meta.id)}
+      disabled={meta.concluida}
+      className={`mt-3 sm:mt-0 sm:ml-4 px-4 py-2 rounded-lg text-sm font-medium transition ${meta.concluida
+        ? 'bg-green-600 cursor-default'
+        : 'bg-[#00BFFF] text-black hover:scale-105 drop-shadow-[0_0_6px_#00BFFF]'}`}
+    >
+      {meta.concluida ? 'Concluída' : 'Concluir'}
+    </button>
+  </div>
+))}
+
               </div>
             </div>
           ))}
