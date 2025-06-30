@@ -22,6 +22,27 @@ import {
 
 // Componente de fundo animado
 function AnimatedBackground() {
+  const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 });
+
+  useEffect(() => {
+    // Set initial dimensions after component mounts
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+
+    // Update dimensions on resize
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="fixed inset-0 overflow-hidden">
       {/* Gradiente base */}
@@ -33,12 +54,12 @@ function AnimatedBackground() {
           key={i}
           className="absolute w-1 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-40"
           initial={{
-            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000),
+            x: Math.random() * dimensions.width,
+            y: Math.random() * dimensions.height,
           }}
           animate={{
-            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000),
+            x: Math.random() * dimensions.width,
+            y: Math.random() * dimensions.height,
           }}
           transition={{
             duration: Math.random() * 15 + 15,
@@ -433,7 +454,7 @@ export default function Register() {
                   <p className="text-slate-400">
                     Já tem uma conta?{' '}
                     <Link 
-                      href="/auth/login" 
+                      href="/login" 
                       className="text-green-400 hover:text-green-300 font-medium transition-colors"
                     >
                       Faça login aqui
