@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Diminui AI",
+  title: "EcoQuest",
   description: "Descubra o quanto você gasta com energia elétrica. Cadastre seus aparelhos e veja dicas para economizar.",
 };
 

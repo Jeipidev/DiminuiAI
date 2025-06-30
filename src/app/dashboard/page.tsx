@@ -11,6 +11,12 @@ import {
   FiAward,
   FiDollarSign,
   FiBookOpen,
+  FiHome,
+  FiZap,
+  FiPlus,
+  FiSettings,
+  FiTrendingUp,
+  FiBarChart,
 } from "react-icons/fi";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { Bar } from "react-chartjs-2";
@@ -31,9 +37,9 @@ interface Device {
   id: string;
   name: string;
   wattage: number;
-  unidade: string; // e.g., "kWh" or other units
-  watts: string; // power consumption in watts
-  horas: string; // hours of usage per day
+  unidade: string;
+  watts: string;
+  horas: string;
 }
 
 interface Room {
@@ -45,7 +51,7 @@ interface Room {
 interface Tarifas {
   id: string;
   te: number;
-  tsud: number;
+  tusd: number;
 }
 
 interface Location {
@@ -98,67 +104,180 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D1117] text-white p-4">
+    <div className="min-h-screen pt-[80px] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-4 space-y-8">
       <Header nome={user?.displayName || user?.email || "Usuário"} />
-      <div className="container mx-auto mt-20">
-        <motion.h1
+      <div className="container mx-auto max-w-7xl">
+        <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold text-center mb-8"
+          className="text-center mb-12"
         >
-          Bem-vindo, {user?.displayName || user?.email}
-        </motion.h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+            Bem-vindo, {user?.displayName || user?.email?.split('@')[0]}
+          </h1>
+          <p className="text-slate-400 text-lg">Gerencie sua energia de forma inteligente</p>
+        </motion.div>
 
-        <LocationList
-          locations={locations}
-          newLocationName={newLocationName}
-          setNewLocationName={setNewLocationName}
-          addLocation={addLocation}
-        />
+        {/* Estatísticas Rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-500/20 rounded-xl">
+                <FiHome className="text-blue-400 text-2xl" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{locations.length}</p>
+                <p className="text-slate-400 text-sm">Locais</p>
+              </div>
+            </div>
+          </motion.div>
 
-        <NavigationButtons />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500/20 rounded-xl">
+                <FiZap className="text-green-400 text-2xl" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {locations.reduce((acc, loc) => acc + (loc.devices?.length || 0), 0)}
+                </p>
+                <p className="text-slate-400 text-sm">Aparelhos</p>
+              </div>
+            </div>
+          </motion.div>
 
-        {/* Nova Seção: Comparação de Consumo entre Locais */}
-        <ComparisonCharts locations={locations} />
-      </div>
-    </div>
-  );
-}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-purple-500/20 rounded-xl">
+                <FiSettings className="text-purple-400 text-2xl" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {locations.reduce((acc, loc) => acc + (loc.rooms?.length || 0), 0)}
+                </p>
+                <p className="text-slate-400 text-sm">Cômodos</p>
+              </div>
+            </div>
+          </motion.div>
 
-interface LocationListProps {
-  locations: Location[];
-  newLocationName: string;
-  setNewLocationName: (name: string) => void;
-  addLocation: () => void;
-}
-function LocationList({
-  locations,
-  newLocationName,
-  setNewLocationName,
-  addLocation,
-}: LocationListProps) {
-  return (
-    <div className="mb-10">
-      <h2 className="text-2xl font-semibold mb-4">Seus Locais</h2>
-      <div className="flex flex-col gap-4">
-        {locations.map((loc) => (
-          <LocationCard key={loc.id} location={loc} />
-        ))}
-      </div>
-      <div className="mt-6 flex flex-col sm:flex-row gap-4">
-        <input
-          type="text"
-          value={newLocationName}
-          onChange={(e) => setNewLocationName(e.target.value)}
-          placeholder="Nome do novo local"
-          className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-        />
-        <button
-          onClick={addLocation}
-          className="w-full sm:w-auto px-6 py-3 bg-[#00BFFF] text-black font-semibold rounded-xl hover:scale-105 transition"
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-yellow-500/20 rounded-xl">
+                <FiTrendingUp className="text-yellow-400 text-2xl" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {locations.reduce((acc, loc) => acc + Object.keys(loc.tarifas || {}).length, 0)}
+                </p>
+                <p className="text-slate-400 text-sm">Tarifas</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Seus Locais */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
         >
-          Adicionar Local
-        </button>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-500/20 rounded-xl">
+              <FiHome className="text-blue-400 text-xl" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Seus Locais</h2>
+          </div>
+
+          {locations.length === 0 ? (
+            <div className="text-center py-12">
+              <FiHome className="mx-auto text-6xl text-slate-600 mb-4" />
+              <p className="text-slate-400 text-lg mb-2">Nenhum local cadastrado ainda</p>
+              <p className="text-slate-500">Adicione seu primeiro local para começar</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              {locations.map((loc) => (
+                <LocationCard key={loc.id} location={loc} />
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              value={newLocationName}
+              onChange={(e) => setNewLocationName(e.target.value)}
+              placeholder="Nome do novo local"
+              className="flex-1 p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
+            />
+            <button
+              onClick={addLocation}
+              className="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-2"
+            >
+              <FiPlus /> Adicionar Local
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Navegação Rápida */}
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-purple-500/20 rounded-xl">
+              <FiSettings className="text-purple-400 text-xl" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Acesso Rápido</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: <FiTarget />, label: "Metas", link: "/metas", color: "from-red-500 to-pink-500" },
+              { icon: <FiAward />, label: "Conquistas", link: "/perfil", color: "from-yellow-500 to-orange-500" },
+              { icon: <FiDollarSign />, label: "Contas", link: "/contas", color: "from-green-500 to-emerald-500" },
+              { icon: <FiBookOpen />, label: "Tutorial", link: "/dashboard/tutorial", color: "from-blue-500 to-cyan-500" },
+            ].map((btn, index) => (
+              <Link href={btn.link} key={index}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className={`flex flex-col items-center justify-center p-6 bg-gradient-to-br ${btn.color} bg-opacity-20 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 group`}
+                >
+                  <div className="mb-3 text-3xl group-hover:scale-110 transition-transform duration-300">
+                    {btn.icon}
+                  </div>
+                  <span className="text-sm font-medium text-white">{btn.label}</span>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Comparação Entre Locais */}
+        {locations.length > 0 && (
+          <ComparisonCharts locations={locations} />
+        )}
       </div>
     </div>
   );
@@ -169,46 +288,47 @@ interface LocationCardProps {
 }
 function LocationCard({ location }: LocationCardProps) {
   return (
-    <div className="p-4 bg-[#161B22] rounded-xl shadow-md">
-      <h3 className="text-xl font-bold">{location.name}</h3>
-      <div className="mt-2">
-        <p className="text-sm text-gray-400">
-          Aparelhos: {location.devices.length} | Tarifas: {Object.keys(location.tarifas || {}).length} | Cômodos: {location.rooms.length}
-        </p>
+    <motion.div
+      whileHover={{ y: -5 }}
+      className="bg-white/10 backdrop-blur-sm border border-white/10 p-6 rounded-2xl hover:bg-white/15 transition-all duration-300 group"
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors">
+          <FiHome className="text-blue-400 text-xl" />
+        </div>
+        <h3 className="text-xl font-bold text-white">{location.name}</h3>
       </div>
-      <div className="mt-4">
-        <Link href={`/dashboard/locations/${location.id}`}>
-          <button className="px-4 py-2 bg-[#00BFFF] text-black rounded-xl hover:scale-105 transition">
-            Gerenciar Local
-          </button>
-        </Link>
+      
+      <div className="space-y-2 mb-6">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400 flex items-center gap-2">
+            <FiZap className="text-xs" />
+            Aparelhos
+          </span>
+          <span className="text-white font-medium">{location.devices?.length || 0}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400 flex items-center gap-2">
+            <FiSettings className="text-xs" />
+            Cômodos
+          </span>
+          <span className="text-white font-medium">{location.rooms?.length || 0}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400 flex items-center gap-2">
+            <FiDollarSign className="text-xs" />
+            Tarifas
+          </span>
+          <span className="text-white font-medium">{Object.keys(location.tarifas || {}).length}</span>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function NavigationButtons() {
-  const buttons = [
-    { icon: <FiTarget />, label: "Metas", link: "/metas" },
-    { icon: <FiAward />, label: "Conquistas", link: "/perfil" },
-    { icon: <FiDollarSign />, label: "Contas", link: "/contas" },
-    { icon: <FiBookOpen />, label: "Tutorial", link: "/dashboard/tutorial" },
-  ];
-
-  return (
-    <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {buttons.map((btn, index) => (
-        <Link href={btn.link} key={index}>
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            className="flex flex-col items-center justify-center p-4 bg-[#161B22] rounded-xl shadow-lg transition hover:shadow-xl"
-          >
-            <div className="mb-2 text-2xl">{btn.icon}</div>
-            <span className="text-sm">{btn.label}</span>
-          </motion.div>
-        </Link>
-      ))}
-    </div>
+      
+      <Link href={`/dashboard/locations/${location.id}`}>
+        <button className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105">
+          Gerenciar Local
+        </button>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -217,24 +337,8 @@ interface ComparisonChartsProps {
 }
 
 function ComparisonCharts({ locations }: ComparisonChartsProps) {
-  // Gráfico de barras: Número de aparelhos por local (já existente)
-  const labels = locations.map(loc => loc.name);
-  const devicesData = locations.map(loc => loc.devices.length);
-  const barDevicesData = {
-    labels,
-    datasets: [
-      {
-        label: "Número de Aparelhos",
-        data: devicesData,
-        backgroundColor: "#00BFFF"
-      }
-    ]
-  };
-
-  // Novo gráfico: Consumo total por local (em kWh/mês)
-  // Para cada local, somamos o consumo de todos os dispositivos.
   const getLocationConsumption = (loc: Location) => {
-    return loc.devices.reduce((acc, d) => {
+    return loc.devices?.reduce((acc, d) => {
       let consumo = 0;
       if (d.unidade === "kWh") {
         consumo = parseFloat(d.watts) * parseFloat(d.horas);
@@ -242,39 +346,115 @@ function ComparisonCharts({ locations }: ComparisonChartsProps) {
         consumo = (parseFloat(d.watts) * parseFloat(d.horas) * 30) / 1000;
       }
       return acc + consumo;
-    }, 0);
+    }, 0) || 0;
   };
 
+  const labels = locations.map(loc => loc.name);
+  const devicesData = locations.map(loc => loc.devices?.length || 0);
   const consumptionData = locations.map(loc => getLocationConsumption(loc));
+
+  const barDevicesData = {
+    labels,
+    datasets: [
+      {
+        label: "Número de Aparelhos",
+        data: devicesData,
+        backgroundColor: "rgba(59, 130, 246, 0.8)",
+        borderColor: "rgb(59, 130, 246)",
+        borderWidth: 2,
+        borderRadius: 8,
+      }
+    ]
+  };
+
   const barConsumptionData = {
     labels,
     datasets: [
       {
         label: "Consumo Total (kWh/mês)",
         data: consumptionData,
-        backgroundColor: "#1E90FF"
+        backgroundColor: "rgba(34, 197, 94, 0.8)",
+        borderColor: "rgb(34, 197, 94)",
+        borderWidth: 2,
+        borderRadius: 8,
       }
     ]
   };
 
   return (
-    <div className="mt-10">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Comparação Entre Locais</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="bg-[#161B22] p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold text-[#00BFFF] mb-4 text-center">
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-green-500/20 rounded-xl">
+          <FiBarChart className="text-green-400 text-xl" />
+        </div>
+        <h2 className="text-2xl font-semibold text-white">Comparação Entre Locais</h2>
+      </div>
+      
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div>
+          <h3 className="text-xl font-semibold text-blue-400 mb-4 text-center">
             Número de Aparelhos por Local
           </h3>
-          <Bar data={barDevicesData} options={{ responsive: true }} />
+          <div className="h-80">
+            <Bar 
+              data={barDevicesData} 
+              options={{ 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    labels: { color: 'white' }
+                  }
+                },
+                scales: {
+                  x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                  },
+                  y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                  }
+                }
+              }} 
+            />
+          </div>
         </div>
-        <div className="bg-[#161B22] p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold text-[#00BFFF] mb-4 text-center">
-            Custo Total por Local (kWh/mês)
+        
+        <div>
+          <h3 className="text-xl font-semibold text-green-400 mb-4 text-center">
+            Consumo Total por Local (kWh/mês)
           </h3>
-          <Bar data={barConsumptionData} options={{ responsive: true }} />
+          <div className="h-80">
+            <Bar 
+              data={barConsumptionData} 
+              options={{ 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    labels: { color: 'white' }
+                  }
+                },
+                scales: {
+                  x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                  },
+                  y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                  }
+                }
+              }} 
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
-

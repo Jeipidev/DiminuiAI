@@ -6,7 +6,7 @@ import { auth } from "../../../../../firebase";
 import Header from "@/components/Header";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { FiTrash2 } from "react-icons/fi";
+import { FiTrash2, FiPlus, FiHome, FiDollarSign, FiClock, FiZap, FiChevronDown } from "react-icons/fi";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { Bar, Pie } from "react-chartjs-2";
 import {
@@ -21,6 +21,107 @@ import {
 
 Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 const db = getFirestore();
+
+interface SelectOption {
+  value: string;
+  label: string;
+  description?: string;
+  icon?: React.ReactNode;
+  color?: string;
+}
+
+interface CustomSelectProps {
+  options: SelectOption[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({ 
+  options, 
+  value, 
+  onChange, 
+  placeholder = "Selecione uma opção",
+  className = ""
+}) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const selectedOption = options.find(option => option.value === value);
+
+  return (
+    <div className={`relative ${className}`}>
+      {/* Select Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-300 hover:bg-white/15 flex items-center justify-between"
+      >
+        <div className="flex items-center gap-3">
+          {selectedOption?.icon && (
+            <span className={selectedOption.color || "text-white"}>
+              {selectedOption.icon}
+            </span>
+          )}
+          <div className="text-left">
+            <div className="font-medium">
+              {selectedOption ? selectedOption.label : placeholder}
+            </div>
+            {selectedOption?.description && (
+              <div className="text-sm text-slate-400">
+                {selectedOption.description}
+              </div>
+            )}
+          </div>
+        </div>
+        <FiChevronDown 
+          className={`text-slate-400 transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-slate-800/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="max-h-60 overflow-y-auto">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full p-4 text-left hover:bg-white/10 transition-all duration-200 flex items-center gap-3 border-b border-white/5 last:border-b-0 ${
+                  value === option.value ? 'bg-blue-500/20 border-blue-500/30' : ''
+                }`}
+              >
+                {option.icon && (
+                  <span className={option.color || "text-white"}>
+                    {option.icon}
+                  </span>
+                )}
+                <div className="flex-1">
+                  <div className={`font-medium ${option.color || "text-white"}`}>
+                    {option.label}
+                  </div>
+                  {option.description && (
+                    <div className="text-sm text-slate-400 mt-1">
+                      {option.description}
+                    </div>
+                  )}
+                </div>
+                {value === option.value && (
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface Eletronico {
   id: string;
@@ -45,7 +146,7 @@ interface Location {
   id: string;
   name: string;
   devices: Eletronico[];
-  tarifas: { [key: string]: string }; // Ex.: { "0_30_te": "0.5", "0_30_tsud": "0.2", ... }
+  tarifas: { [key: string]: string }; // Ex.: { "0_30_te": "0.5", "0_30_tusd": "0.2", ... }
   rooms: Room[];
   tiposCampos?: string[];
   modoFixo?: boolean;
@@ -68,18 +169,128 @@ export default function LocationPage() {
   // Estado para os cômodos e para criar um novo
   const [rooms, setRooms] = useState<Room[]>([]);
   const [newRoomName, setNewRoomName] = useState("");
-  // Estado para o formulário de novo dispositivo (agora com roomId)
+  // Estado para o formulário de novo dispositivo (sem voltagem)
   const [novo, setNovo] = useState({
     nome: "",
     valor: "",
     unidade: "W",
     horas: "",
-    voltagem: "",
-    hz: "",
-    fp: "1",
-    corrente: "",
     roomId: "",
   });
+
+  // Opções para os selects customizados
+  const unitOptions: SelectOption[] = [
+    { 
+      value: "W", 
+      label: "Watts (W)", 
+      description: "Potência em Watts", 
+      icon: <FiZap />,
+      color: "text-blue-400"
+    },
+    { 
+      value: "kWh", 
+      label: "kWh por mês", 
+      description: "Consumo mensal", 
+      icon: <FiDollarSign />,
+      color: "text-green-400"
+    },
+    { 
+      value: "kWh/ano", 
+      label: "kWh por ano", 
+      description: "Consumo anual", 
+      icon: <FiDollarSign />,
+      color: "text-purple-400"
+    }
+  ];
+
+  const tariffOptions: SelectOption[] = [
+    { 
+      value: "0_30_te", 
+      label: "0-30 kWh (TE)", 
+      description: "Tarifa de Energia - Faixa 1", 
+      color: "text-green-400" 
+    },
+    { 
+      value: "0_30_tusd", 
+      label: "0-30 kWh (TUSD)", 
+      description: "Tarifa de Uso - Faixa 1", 
+      color: "text-blue-400" 
+    },
+    { 
+      value: "30_100_te", 
+      label: "30-100 kWh (TE)", 
+      description: "Tarifa de Energia - Faixa 2", 
+      color: "text-yellow-400" 
+    },
+    { 
+      value: "30_100_tusd", 
+      label: "30-100 kWh (TUSD)", 
+      description: "Tarifa de Uso - Faixa 2", 
+      color: "text-orange-400" 
+    },
+    { 
+      value: "100_220_te", 
+      label: "100-220 kWh (TE)", 
+      description: "Tarifa de Energia - Faixa 3", 
+      color: "text-red-400" 
+    },
+    { 
+      value: "100_220_tusd", 
+      label: "100-220 kWh (TUSD)", 
+      description: "Tarifa de Uso - Faixa 3", 
+      color: "text-purple-400" 
+    }
+  ];
+
+  // ===== FUNÇÕES DE CÁLCULO UNIFICADAS =====
+  
+  // Função unificada para calcular consumo mensal em kWh
+  const calcularConsumoMensal = (device: Eletronico): number => {
+    const valor = parseFloat(device.watts);
+    const horas = parseFloat(device.horas);
+    
+    if (isNaN(valor) || isNaN(horas)) return 0;
+    
+    switch (device.unidade) {
+      case "W":
+        // Watts para kWh/mês: (W * horas/dia * 30 dias) / 1000
+        return (valor * horas * 30) / 1000;
+      case "kWh":
+        // kWh/mês multiplicado pelas horas de uso
+        return valor * horas;
+      case "kWh/ano":
+        // kWh/ano dividido por 12 meses, multiplicado pelas horas de uso
+        return (valor / 12) * horas;
+      default:
+        return 0;
+    }
+  };
+
+  // Função unificada para calcular custo
+  const calcularCusto = (consumoMensal: number, tipoTarifa: string): number => {
+    if (modoFixo) {
+      const teTarifa = parseFloat((tarifas["fixo_te"] || "0").replace(",", "."));
+      const tusdTarifa = parseFloat((tarifas["fixo_tusd"] || "0").replace(",", "."));
+      // Tarifa fixa: TE + TUSD (não multiplicados)
+      return consumoMensal * (teTarifa * tusdTarifa);
+    } else {
+      // Identificar qual faixa usar baseado no consumo
+      const faixa = identificarFaixaPorConsumo(consumoMensal);
+      const teTarifa = parseFloat((tarifas[`${faixa}_te`] || "0").replace(",", "."));
+      const tusdTarifa = parseFloat((tarifas[`${faixa}_tusd`] || "0").replace(",", "."));
+      // Por faixa: TE + TUSD (não multiplicados)
+      return consumoMensal * (teTarifa *+ tusdTarifa);
+    }
+  };
+
+  // Função para identificar a faixa baseada no consumo mensal
+  const identificarFaixaPorConsumo = (consumoMensal: number): string => {
+    if (consumoMensal <= 30) return "0_30";
+    if (consumoMensal <= 100) return "30_100";
+    return "100_220";
+  };
+
+  // ===== FIM DAS FUNÇÕES DE CÁLCULO UNIFICADAS =====
 
   // Atualiza o local no Firestore (dentro do array "locations" do usuário)
   const updateLocationFirestore = async (updatedLoc: Location) => {
@@ -156,53 +367,25 @@ export default function LocationPage() {
     return () => unsubscribe();
   }, [router, id]);
 
-  const converterParaWatts = (
-    valor: number,
-    unidade: string,
-    voltagem?: number,
-    corrente?: number,
-    fp?: number
-  ): number => {
-    if (unidade === "V" && voltagem && corrente && fp) {
-      return voltagem * corrente * fp;
-    }
-    switch (unidade) {
-      case "W":
-        return valor;
-      case "kWh":
-        return valor;
-      default:
-        return valor;
-    }
-  };
-
-  const identificarTarifa = (kwh: number, preferencia: "te" | "tsud" = "te"): string => {
-    if (kwh <= 30) return `0_30_${preferencia}`;
-    if (kwh <= 100) return `30_100_${preferencia}`;
-    return `100_220_${preferencia}`;
-  };
-
   const handleAddDevice = async () => {
     if (!novo.nome || !novo.horas || !user || !locationData) return;
-    let valorConvertido = 0;
-    let consumoMensal = 0;
-    let extra = {};
-    if (novo.unidade === "V") {
-      const v = parseFloat(novo.voltagem);
-      const a = parseFloat(novo.corrente);
-      const fp = parseFloat(novo.fp) || 1;
-      if (!v || !a) return;
-      valorConvertido = converterParaWatts(0, "V", v, a, fp);
-      consumoMensal = (valorConvertido * parseFloat(novo.horas) * 30) / 1000;
-      extra = { voltagem: v, corrente: a, fp, hz: novo.hz };
-    } else if (novo.unidade === "kWh") {
-      valorConvertido = parseFloat(novo.valor);
-      consumoMensal = valorConvertido * parseFloat(novo.horas);
-    } else {
-      valorConvertido = converterParaWatts(parseFloat(novo.valor), "W");
-      consumoMensal = (valorConvertido * parseFloat(novo.horas) * 30) / 1000;
-    }
-    const tipoTarifa = modoFixo ? "fixo" : identificarTarifa(consumoMensal, "te");
+    
+    const valorConvertido = parseFloat(novo.valor);
+    
+    // Para determinar o tipo de tarifa inicial, calculamos o consumo mensal
+    const deviceTemp: Eletronico = {
+      id: "",
+      nome: novo.nome,
+      watts: valorConvertido.toFixed(2),
+      horas: novo.horas,
+      unidade: novo.unidade,
+      tipoTarifa: "",
+      roomId: novo.roomId,
+    };
+    
+    const consumoMensal = calcularConsumoMensal(deviceTemp);
+    const tipoTarifa = modoFixo ? "fixo" : identificarFaixaPorConsumo(consumoMensal);
+    
     const newDevice: Eletronico = {
       id: Math.random().toString(36).substr(2, 9),
       nome: novo.nome,
@@ -210,9 +393,9 @@ export default function LocationPage() {
       horas: novo.horas,
       unidade: novo.unidade,
       tipoTarifa,
-      roomId: novo.roomId, // atribui o cômodo selecionado
-      ...extra,
+      roomId: novo.roomId,
     };
+    
     const updatedDevices = [...devices, newDevice];
     setDevices(updatedDevices);
     const updatedLocation = { ...locationData, devices: updatedDevices };
@@ -223,10 +406,6 @@ export default function LocationPage() {
       valor: "",
       unidade: "W",
       horas: "",
-      voltagem: "",
-      corrente: "",
-      fp: "1",
-      hz: "",
       roomId: "",
     });
   };
@@ -244,16 +423,25 @@ export default function LocationPage() {
     const updatedTarifas = { ...tarifas, [key]: valor };
     setTarifas(updatedTarifas);
     if (locationData) {
-      const updatedLocation = { ...locationData, tariffs: updatedTarifas };
+      const updatedLocation = { ...locationData, tarifas: updatedTarifas };
       setLocationData(updatedLocation);
       await updateLocationFirestore(updatedLocation);
     }
   };
 
   const handleEditHoras = async (deviceId: string, novasHoras: string) => {
-    const updatedDevices = devices.map((d) =>
-      d.id === deviceId ? { ...d, horas: novasHoras } : d
-    );
+    const updatedDevices = devices.map((d) => {
+      if (d.id === deviceId) {
+        const updatedDevice = { ...d, horas: novasHoras };
+        // Recalcular tipo de tarifa se não for modo fixo
+        if (!modoFixo) {
+          const consumoMensal = calcularConsumoMensal(updatedDevice);
+          updatedDevice.tipoTarifa = identificarFaixaPorConsumo(consumoMensal);
+        }
+        return updatedDevice;
+      }
+      return d;
+    });
     setDevices(updatedDevices);
     if (locationData) {
       const updatedLocation = { ...locationData, devices: updatedDevices };
@@ -262,36 +450,27 @@ export default function LocationPage() {
     }
   };
 
-  const consumoTotal = devices.reduce((total, d) => {
-    let kwhMes = 0;
-    if (d.unidade === "kWh") {
-      kwhMes = parseFloat(d.watts) * parseFloat(d.horas);
-    } else {
-      kwhMes = (parseFloat(d.watts) * parseFloat(d.horas) * 30) / 1000;
-    }
-    if (modoFixo) {
-      const teTarifa = parseFloat((tarifas["fixo_te"] || "1").replace(",", "."));
-      const tsudTarifa = parseFloat((tarifas["fixo_tsud"] || "1").replace(",", "."));
-      return total + kwhMes * teTarifa * tsudTarifa;
-    } else {
-      const rangeKey = d.tipoTarifa.split("_").slice(0, 2).join("_");
-      const teTarifa = parseFloat((tarifas[`${rangeKey}_te`] || "1").replace(",", "."));
-      const tsudTarifa = parseFloat((tarifas[`${rangeKey}_tsud`] || "1").replace(",", "."));
-      return total + kwhMes * teTarifa * tsudTarifa;
-    }
+  // Cálculo do consumo total usando as funções unificadas
+  const consumoTotal = devices.reduce((total, device) => {
+    const consumoMensal = calcularConsumoMensal(device);
+    const custo = calcularCusto(consumoMensal, device.tipoTarifa);
+    return total + custo;
   }, 0);
 
-  const graficoConsumo = {
+  // Gráfico de gasto em dinheiro por aparelho (usando funções unificadas)
+  const graficoGasto = {
     labels: devices.map((d) => d.nome),
     datasets: [
       {
-        label: "Consumo (kWh/mês)",
-        data: devices.map((d) =>
-          d.unidade === "kWh"
-            ? parseFloat(d.watts) * parseFloat(d.horas)
-            : (parseFloat(d.watts) * parseFloat(d.horas) * 30) / 1000
-        ),
-        backgroundColor: "#00BFFF",
+        label: "Gasto Mensal (R$)",
+        data: devices.map((device) => {
+          const consumoMensal = calcularConsumoMensal(device);
+          return calcularCusto(consumoMensal, device.tipoTarifa);
+        }),
+        backgroundColor: "rgba(34, 197, 94, 0.8)",
+        borderColor: "rgb(34, 197, 94)",
+        borderWidth: 2,
+        borderRadius: 8,
       },
     ],
   };
@@ -303,143 +482,169 @@ export default function LocationPage() {
         label: "Horas por dia",
         data: devices.map((d) => parseFloat(d.horas)),
         backgroundColor: [
-          "#00BFFF",
-          "#1E90FF",
-          "#87CEFA",
-          "#4682B4",
-          "#5F9EA0",
+          "rgba(59, 130, 246, 0.8)",
+          "rgba(16, 185, 129, 0.8)",
+          "rgba(245, 101, 101, 0.8)",
+          "rgba(251, 191, 36, 0.8)",
+          "rgba(139, 92, 246, 0.8)",
         ],
+        borderWidth: 0,
       },
     ],
   };
 
-  // Agrupa os dispositivos por cômodo (ou "Sem Cômodo")
-  const devicesByRoom = devices.reduce((acc, device) => {
-    const roomKey = device.roomId || "Sem Cômodo";
-    if (!acc[roomKey]) acc[roomKey] = [];
-    acc[roomKey].push(device);
-    return acc;
-  }, {} as { [key: string]: Eletronico[] });
-
   if (loading || !locationData)
     return (
-      <div className="min-h-screen flex justify-center items-center text-white">
-        Carregando...
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Carregando...</p>
+        </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen pt-[80px] bg-[#0D1117] text-white p-4 space-y-10">
+    <div className="min-h-screen pt-[80px] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-4 space-y-8">
       <Header nome={user?.displayName || user.email} />
-      <div className="container mx-auto">
-        <motion.h1
+      <div className="container mx-auto max-w-7xl">
+        <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold text-center mb-8"
+          className="text-center mb-12"
         >
-          Gerenciando Local: {locationData.name}
-        </motion.h1>
-
-        {/* Campo para gerenciar cômodos */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mb-10">
-          <h2 className="text-xl font-semibold text-[#00BFFF] mb-4">
-            Cômodos
-          </h2>
-          <div className="flex flex-col gap-4">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+            {locationData.name}
+          </h1>
+          <p className="text-slate-400 text-lg">Gerenciamento Inteligente de Energia</p>
+        </motion.div>
+        <motion.div
+        initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-500/20 rounded-xl">
+              <FiZap className="text-blue-400 text-xl" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Cômodos</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {rooms.map((room) => (
-              <div key={room.id} className="p-3 bg-[#1E1E2F] rounded-xl">
-                {room.name}
+              <div key={room.id} className="p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 hover:bg-white/15 transition-all duration-300">
+                <p className="text-white font-medium">{room.name}</p>
               </div>
             ))}
           </div>
-          <div className="mt-4 flex gap-4">
+          
+          <div className="flex flex-col sm:flex-row gap-4">
             <input
               type="text"
               value={newRoomName}
               onChange={(e) => setNewRoomName(e.target.value)}
-              placeholder="Novo cômodo"
-              className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+              placeholder="Nome do novo cômodo"
+              className="flex-1 p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
             />
             <button
               onClick={addRoom}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-blue-500/50 transition duration-300 ease-in-out"
+              className="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105 flex items-center gap-2"
             >
-              Criar Cômodo
+              <FiPlus /> Adicionar Cômodo
             </button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Seletor de Modo */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mb-6">
-          <h2 className="text-xl mb-4 font-semibold text-[#00BFFF]">
-            Selecione o Modo de Tarifação
-          </h2>
-          <div className="flex items-center gap-4">
+        
+
+        {/* Seletor de Modo - Modernizado */}
+        <motion.div 
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-green-500/20 rounded-xl">
+              <FiDollarSign className="text-green-400 text-xl" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Modo de Tarifação</h2>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => setModoFixo(false)}
-              className={`px-4 py-2 rounded-xl font-semibold ${!modoFixo ? "bg-[#00BFFF] text-black" : "bg-gray-700"}`}
+              className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${
+                !modoFixo 
+                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg" 
+                  : "bg-white/10 text-slate-300 hover:bg-white/15"
+              }`}
             >
               Por Faixa de Consumo
             </button>
             <button
               onClick={() => setModoFixo(true)}
-              className={`px-4 py-2 rounded-xl font-semibold ${modoFixo ? "bg-[#00BFFF] text-black" : "bg-gray-700"}`}
+              className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${
+                modoFixo 
+                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg" 
+                  : "bg-white/10 text-slate-300 hover:bg-white/15"
+              }`}
             >
               Tarifa Fixa
             </button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Cadastro de Tarifas */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mb-10">
-          <h2 className="text-xl mb-4 font-semibold text-[#00BFFF]">
-            Cadastro de Tarifas
-          </h2>
+        {/* Cadastro de Tarifas - Modernizado */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-yellow-500/20 rounded-xl">
+              <FiDollarSign className="text-yellow-400 text-xl" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Configuração de Tarifas</h2>
+          </div>
+          
           {modoFixo ? (
-            <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
-              <p className="w-full md:w-40">Tarifa Fixa</p>
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 mb-4">
+              <div className="lg:w-48 flex items-center">
+                <p className="text-white font-medium">Tarifa Fixa</p>
+              </div>
               <input
                 type="number"
                 placeholder="TE (R$/kWh)"
-                className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+                className="flex-1 p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
                 value={tarifas["fixo_te"] || ""}
                 onChange={(e) => handleTariffChange("fixo_te", e.target.value)}
               />
               <input
                 type="number"
-                placeholder="TSUD (R$/kWh)"
-                className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-                value={tarifas["fixo_tsud"] || ""}
-                onChange={(e) => handleTariffChange("fixo_tsud", e.target.value)}
+                placeholder="TUSD (R$/kWh)"
+                className="flex-1 p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
+                value={tarifas["fixo_tusd"] || ""}
+                onChange={(e) => handleTariffChange("fixo_tusd", e.target.value)}
               />
             </div>
           ) : (
-            <>
+            <div className="space-y-4 mb-6">
               {tiposCampos.map((tipo, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-3"
-                >
-                  <select
+                <div key={i} className="flex z-50 flex-col lg:flex-row items-stretch lg:items-center gap-4">
+                  <CustomSelect
+                    options={tariffOptions}
                     value={tipo}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const novosCampos = [...tiposCampos];
-                      novosCampos[i] = e.target.value;
+                      novosCampos[i] = value;
                       setTiposCampos(novosCampos);
                     }}
-                    className="w-full md:w-40 p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-                  >
-                    <option value="0_30_te">0-30 kWh (TE)</option>
-                    <option value="0_30_tsud">0-30 kWh (TSUD)</option>
-                    <option value="30_100_te">30-100 kWh (TE)</option>
-                    <option value="30_100_tsud">30-100 kWh (TSUD)</option>
-                    <option value="100_220_te">100-220 kWh (TE)</option>
-                    <option value="100_220_tsud">100-220 kWh (TSUD)</option>
-                  </select>
+                    placeholder="Selecione o tipo de tarifa"
+                    className="lg:w-72"
+                  />
                   <input
                     type="number"
                     placeholder="Valor R$/kWh"
-                    className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
+                    className="flex-1 p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
                     value={tarifas[tipo] || ""}
                     onChange={(e) => handleTariffChange(tipo, e.target.value)}
                   />
@@ -449,7 +654,7 @@ export default function LocationPage() {
                       novosCampos.splice(i, 1);
                       setTiposCampos(novosCampos);
                     }}
-                    className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
+                    className="p-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-2xl transition-all duration-300"
                   >
                     <FiTrash2 />
                   </button>
@@ -457,106 +662,113 @@ export default function LocationPage() {
               ))}
               <button
                 onClick={() => setTiposCampos([...tiposCampos, "0_30_te"])}
-                className="w-full px-4 py-2 mt-4 bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-blue-500/50 transition duration-300 ease-in-out"
+                className="w-full px-6 py-4 bg-white/10 hover:bg-white/15 text-white rounded-2xl border border-white/20 transition-all duration-300 flex items-center justify-center gap-2"
               >
-                Adicionar Faixa
+                <FiPlus /> Adicionar Faixa
               </button>
-            </>
+            </div>
           )}
+          
           <button
             onClick={handleSalvarTarifas}
-            className="w-full px-4 py-2 mt-4 bg-green-500 text-black rounded-xl hover:scale-105 transition"
+            className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-green-500/25 transition-all duration-300 hover:scale-105"
           >
-            Salvar Tarifas
+            Salvar Configurações
           </button>
-        </div>
+        </motion.div>
 
-        {/* Adicionar Aparelho */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mb-10">
-          <h2 className="text-xl font-semibold text-[#00BFFF]">
-            Adicionar Aparelho
-          </h2>
-          <input
-            className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white mb-3"
-            placeholder="Nome do Aparelho"
-            value={novo.nome}
-            onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
-          />
-          {/* Campo para selecionar o cômodo */}
-          <select
-            value={novo.roomId || ""}
-            onChange={(e) => setNovo({ ...novo, roomId: e.target.value })}
-            className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20 mb-3"
-          >
-            <option value="">Selecione o cômodo</option>
-            {rooms.map((room) => (
-              <option key={room.id} value={room.id}>
-                {room.name}
-              </option>
-            ))}
-          </select>
-          {novo.unidade === "V" ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-              <input
-                className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-                placeholder="Voltagem (V)"
-                type="number"
-                value={novo.voltagem}
-                onChange={(e) => setNovo({ ...novo, voltagem: e.target.value })}
-              />
-              <input
-                className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-                placeholder="Corrente (A)"
-                type="number"
-                value={novo.corrente}
-                onChange={(e) => setNovo({ ...novo, corrente: e.target.value })}
-              />
-              <input
-                className="p-3 rounded-xl bg-[#1E1E2F] text-white"
-                placeholder="Fator de Potência"
-                type="number"
-                value={novo.fp}
-                onChange={(e) => setNovo({ ...novo, fp: e.target.value })}
-              />
+        {/* Adicionar Aparelho - Modernizado */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/5 z-50 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-purple-500/20 rounded-xl">
+              <FiZap className="text-purple-400 text-xl" />
             </div>
-          ) : (
-            <input
-              className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white mb-3"
-              placeholder={novo.unidade === "kWh" ? "Consumo (kWh)" : "Potência (ex: 1000)"}
-              type="number"
-              value={novo.valor}
-              onChange={(e) => setNovo({ ...novo, valor: e.target.value })}
+            <h2 className="text-2xl font-semibold text-white">Adicionar Aparelho</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <input className=" p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
+              placeholder="Nome do Aparelho"
+              value={novo.nome}
+              onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
             />
-          )}
-          <div className="flex gap-4 mb-3">
+            
             <select
-              className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white border border-white/20"
-              value={novo.unidade}
-              onChange={(e) => setNovo({ ...novo, unidade: e.target.value })}
+              value={novo.roomId || ""}
+              onChange={(e) => setNovo({ ...novo, roomId: e.target.value })}
+              className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
             >
-              <option value="W">W</option>
-              <option value="kWh">kWh</option>
-              <option value="V">Volts</option>
+              <option value="">Selecione o cômodo</option>
+              {rooms.map((room) => (
+                <option key={room.id} value={room.id} className="bg-slate-800 text-white">
+                  {room.name}
+                </option>
+              ))}
             </select>
+          </div>
+          
+          {/* Campo para valor baseado na unidade selecionada */}
+          <input
+            className="w-full p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all mt-4"
+            placeholder={
+              novo.unidade === "kWh" 
+                ? "Consumo mensal (kWh)" 
+                : novo.unidade === "kWh/ano"
+                ? "Consumo anual (kWh/ano)"
+                : "Potência (ex: 1000)"
+            }
+            type="number"
+            value={novo.valor}
+            onChange={(e) => setNovo({ ...novo, valor: e.target.value })}
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <select
+              value={novo.unidade || ""}
+              onChange={(e) => setNovo({ ...novo, unidade: e.target.value })}
+              className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
+            >
+              <option value="">Selecione o cômodo</option>
+              {unitOptions.map((unidade) => (
+                <option key={unidade.value} value={unidade.value} className="bg-slate-800 text-white">
+                  {unidade.value}
+                </option>
+              ))}
+            </select>
+              
             <input
-              className="w-full p-3 rounded-xl bg-[#1E1E2F] text-white"
+              className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm text-white border border-white/20 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
               placeholder="Horas/dia"
               type="number"
               value={novo.horas}
               onChange={(e) => setNovo({ ...novo, horas: e.target.value })}
             />
           </div>
+          
           <button
             onClick={handleAddDevice}
-            className="w-full px-6 py-3 bg-[#00BFFF] text-black rounded-2xl font-semibold shadow hover:scale-105 transition"
+            className="w-full px-6 py-4 mt-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
           >
-            Adicionar Aparelho
+            <FiPlus /> Adicionar Aparelho
           </button>
-        </div>
+        </motion.div>
 
-        {/* Lista de Aparelhos agrupados por cômodo */}
-        <div className="bg-[#161B22] p-6 rounded-2xl shadow-md mb-10">
-          <h2 className="text-xl font-semibold text-[#00BFFF]">Seus Aparelhos</h2>
+        <motion.div 
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-500/20 rounded-xl">
+              <FiHome className="text-blue-400 text-xl" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Seus Aparelhos</h2>
+          </div>
+          
           {Object.entries(
             devices.reduce((acc, device) => {
               const key = device.roomId || "Sem Cômodo";
@@ -570,91 +782,168 @@ export default function LocationPage() {
                 ? "Sem Cômodo"
                 : rooms.find((r) => r.id === roomId)?.name || "Cômodo";
             return (
-              <div key={roomId} className="mb-6">
-                <h3 className="text-lg font-bold mb-3">{roomName}</h3>
-                {devicesGroup.map((el) => {
-                  let kwhMes = 0;
-                  if (el.unidade === "kWh") {
-                    kwhMes = parseFloat(el.watts) * parseFloat(el.horas);
-                  } else {
-                    kwhMes =
-                      (parseFloat(el.watts) * parseFloat(el.horas) * 30) / 1000;
-                  }
-                  let custo = 0;
-                  if (modoFixo) {
-                    const teTarifa = parseFloat(
-                      (tarifas["fixo_te"] || "1").replace(",", ".")
-                    );
-                    const tsudTarifa = parseFloat(
-                      (tarifas["fixo_tsud"] || "1").replace(",", ".")
-                    );
-                    custo = kwhMes * teTarifa * tsudTarifa;
-                  } else {
-                    const rangeKey = el.tipoTarifa.split("_").slice(0, 2).join("_");
-                    const teTarifa = parseFloat(
-                      (tarifas[`${rangeKey}_te`] || "1").replace(",", ".")
-                    );
-                    const tsudTarifa = parseFloat(
-                      (tarifas[`${rangeKey}_tsud`] || "1").replace(",", ".")
-                    );
-                    custo = kwhMes * teTarifa * tsudTarifa;
-                  }
-                  return (
-                    <div
-                      key={el.id}
-                      className="flex items-center gap-4 bg-[#1E1E2F] p-4 rounded-xl mb-3"
-                    >
-                      <div className="flex-1">
-                        <p className="text-lg font-bold">{el.nome}</p>
-                        <p className="text-sm text-gray-300">
-                          {el.watts}{el.unidade} - {modoFixo ? "Tarifa Fixa" : el.tipoTarifa} -{" "}
-                          {kwhMes.toFixed(2)} kWh/mês - R$ {custo.toFixed(2)}
-                        </p>
-                      </div>
-                      <input
-                        type="number"
-                        className="w-24 p-2 rounded bg-[#111827] text-white"
-                        value={el.horas}
-                        onChange={(e) => handleEditHoras(el.id, e.target.value)}
-                      />
-                      <button
-                        onClick={() => handleRemoveDevice(el.id)}
-                        className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
+              <div key={roomId} className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-indigo-500/20 rounded-xl">
+                    <FiHome className="text-indigo-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{roomName}</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  {devicesGroup.map((el) => {
+                    const consumoMensal = calcularConsumoMensal(el);
+                    const custo = calcularCusto(consumoMensal, el.tipoTarifa);
+                    
+                    return (
+                      <div
+                        key={el.id}
+                        className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/10 hover:bg-white/15 transition-all duration-300"
                       >
-                        Remover
-                      </button>
-                    </div>
-                  );
-                })}
+                        <div className="flex-1">
+                          <h4 className="text-lg font-bold text-white mb-2">{el.nome}</h4>
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <span className="flex items-center gap-1 text-blue-400">
+                              <FiZap className="text-xs" />
+                              {el.watts} {el.unidade}
+                            </span>
+                            <span className="flex items-center gap-1 text-green-400">
+                              <FiDollarSign className="text-xs" />
+                              {modoFixo ? "Tarifa Fixa" : `Faixa ${el.tipoTarifa}`}
+                            </span>
+                            <span className="text-yellow-400">
+                              {consumoMensal.toFixed(2)} kWh/mês
+                            </span>
+                            <span className="text-emerald-400 font-semibold">
+                              R$ {custo.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <FiClock className="text-slate-400" />
+                            <input
+                              type="number"
+                              className="w-20 p-2 rounded-xl bg-white/10 backdrop-blur-sm text-white border border-white/20 text-center focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all"
+                              value={el.horas}
+                              onChange={(e) => handleEditHoras(el.id, e.target.value)}
+                            />
+                            <span className="text-slate-400 text-sm">h/dia</span>
+                          </div>
+                          
+                          <button
+                            onClick={() => handleRemoveDevice(el.id)}
+                            className="p-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
-        </div>
-
-        {/* Resultado Total e Gráficos */}
-        <div className="text-lg bg-[#161B22] p-6 rounded-xl mb-10">
-          <p className="mb-2">
-            Custo total estimado:
-            <span className="text-[#00BFFF] font-bold">
-              {" "}
+        </motion.div>
+        {/* Resultado Total - Modernizado */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 backdrop-blur-xl border border-emerald-500/30 p-8 rounded-3xl shadow-2xl mb-8"
+        >
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 bg-emerald-500/20 rounded-xl">
+                <FiDollarSign className="text-emerald-400 text-2xl" />
+              </div>
+              <h2 className="text-2xl font-semibold text-white">Custo Total Estimado</h2>
+            </div>
+            <p className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
               R$ {consumoTotal.toFixed(2)}
-            </span>
-          </p>
-        </div>
+            </p>
+            <p className="text-slate-400 mt-2">Por mês</p>
+          </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <div className="bg-[#161B22] p-6 rounded-xl shadow-lg">
-            <h3 className="text-lg mb-4 font-semibold text-[#00BFFF]">
-              Consumo por Aparelho
-            </h3>
-            <Bar data={graficoConsumo} options={{ responsive: true }} />
-          </div>
-          <div className="bg-[#161B22] p-6 rounded-xl shadow-lg">
-            <h3 className="text-lg mb-4 font-semibold text-[#00BFFF]">
-              Tempo de Uso por Aparelho
-            </h3>
-            <Pie data={graficoUso} options={{ responsive: true }} />
-          </div>
+        {/* Gráficos - Modernizados */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-green-500/20 rounded-xl">
+                <FiDollarSign className="text-green-400 text-xl" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Gasto por Aparelho</h3>
+            </div>
+            <div className="h-80">
+              <Bar 
+                data={graficoGasto} 
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      labels: {
+                        color: 'white'
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      ticks: {
+                        color: 'white'
+                      },
+                      grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    },
+                    y: {
+                      ticks: {
+                        color: 'white'
+                      },
+                      grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    }
+                  }
+                }} 
+              />
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-500/20 rounded-xl">
+                <FiClock className="text-blue-400 text-xl" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Tempo de Uso por Aparelho</h3>
+            </div>
+            <div className="h-80">
+              <Pie 
+                data={graficoUso} 
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      labels: {
+                        color: 'white'
+                      }
+                    }
+                  }
+                }} 
+              />
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
