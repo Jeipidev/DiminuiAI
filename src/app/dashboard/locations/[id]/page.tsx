@@ -272,14 +272,14 @@ export default function LocationPage() {
       const teTarifa = parseFloat((tarifas["fixo_te"] || "0").replace(",", "."));
       const tusdTarifa = parseFloat((tarifas["fixo_tusd"] || "0").replace(",", "."));
       // Tarifa fixa: TE + TUSD (não multiplicados)
-      return consumoMensal * (teTarifa * tusdTarifa);
+      return consumoMensal * (teTarifa + tusdTarifa);
     } else {
       // Identificar qual faixa usar baseado no consumo
       const faixa = identificarFaixaPorConsumo(consumoMensal);
       const teTarifa = parseFloat((tarifas[`${faixa}_te`] || "0").replace(",", "."));
       const tusdTarifa = parseFloat((tarifas[`${faixa}_tusd`] || "0").replace(",", "."));
       // Por faixa: TE + TUSD (não multiplicados)
-      return consumoMensal * (teTarifa *+ tusdTarifa);
+      return consumoMensal * (teTarifa + tusdTarifa);
     }
   };
 
