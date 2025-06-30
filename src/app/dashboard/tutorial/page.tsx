@@ -28,6 +28,7 @@ import {
   FiStar,
 } from "react-icons/fi";
 import Header from "@/components/Header";
+import { BiLeaf } from "react-icons/bi";
 
 interface TutorialStep {
   id: number;
@@ -125,11 +126,10 @@ export default function TutorialPage() {
     {
       id: 5,
       title: "Estabelecendo Metas",
-      description: "Defina objetivos de economia e acompanhe seu progresso com metas semanais e mensais.",
+      description: "Defina objetivos de economia.",
       component: <GoalsTutorial />,
       tips: [
         "Metas ajudam a manter o foco na economia",
-        "Complete metas para ganhar novas automaticamente",
         "Metas concluídas contribuem para suas conquistas"
       ]
     },
@@ -643,69 +643,279 @@ function DeviceTutorial() {
 }
 
 function GoalsTutorial() {
-  const [goals, setGoals] = useState([
-    { title: 'Reduzir consumo em 10%', progress: 75, type: 'weekly' },
-    { title: 'Economizar R$ 50 este mês', progress: 45, type: 'monthly' },
-    { title: 'Cadastrar 5 aparelhos', progress: 100, type: 'weekly' }
-  ]);
+
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<number | null>(null);
+
+  const exampleGoals = [
+    { 
+      id: 1,
+      title: 'Economizar R$ 200 este mês', 
+      progress: 65, 
+      current: 130,
+      target: 200,
+      unit: 'R$',
+      category: 'economia',
+      color: '#22c55e',
+      icon: 'FiDollarSign',
+      daysLeft: 12,
+      status: 'ativa'
+    },
+    { 
+      id: 2,
+      title: 'Reduzir consumo em 50 kWh', 
+      progress: 80, 
+      current: 40,
+      target: 50,
+      unit: 'kWh',
+      category: 'energia',
+      color: '#3b82f6',
+      icon: 'FiZap',
+      daysLeft: 25,
+      status: 'ativa'
+    },
+    { 
+      id: 3,
+      title: 'Trocar 10 lâmpadas por LED', 
+      progress: 100, 
+      current: 10,
+      target: 10,
+      unit: 'unidades',
+      category: 'sustentabilidade',
+      color: '#10b981',
+      icon: 'FiLeaf',
+      daysLeft: 0,
+      status: 'concluida'
+    }
+  ];
+
+  const tutorialSteps = [
+    "Crie suas próprias metas personalizadas",
+    "Defina objetivos, prazos e recompensas",
+    "Acompanhe o progresso manualmente",
+    "Comemore as conquistas!"
+  ];
+
+  const getIconComponent = (iconName: string) => {
+    const icons: { [key: string]: React.ReactNode } = {
+      FiDollarSign: <FiDollarSign />,
+      FiZap: <FiZap />,
+      FiLeaf: <BiLeaf />,
+      FiTarget: <FiTarget />
+    };
+    return icons[iconName] || <FiTarget />;
+  };
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Sistema de Metas</h3>
+      <h3 className="text-lg font-semibold mb-4">Sistema de Metas Personalizadas</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <FiClock className="text-orange-400" />
-            Metas Semanais
-          </h4>
-          <div className="space-y-3">
-            {goals.filter(g => g.type === 'weekly').map((goal, index) => (
-              <div key={index} className="p-3 bg-orange-500/10 rounded-xl border border-orange-500/30">
-                <p className="text-sm font-medium mb-2">{goal.title}</p>
-                <div className="w-full bg-white/20 rounded-full h-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${goal.progress}%` }}
-                    transition={{ duration: 1, delay: index * 0.3 }}
-                    className="bg-orange-400 h-2 rounded-full"
-                  />
-                </div>
-                <p className="text-xs text-orange-400 mt-1">{goal.progress}% concluído</p>
-              </div>
-            ))}
-          </div>
+      {/* Tutorial Steps */}
+      <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+        <div className="flex items-center gap-2 mb-3">
+          <FiTarget className="text-purple-400" />
+          <span className="text-purple-400 font-medium">Como Funciona:</span>
         </div>
-        
-        <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <FiCalendar className="text-blue-400" />
-            Metas Mensais
-          </h4>
-          <div className="space-y-3">
-            {goals.filter(g => g.type === 'monthly').map((goal, index) => (
-              <div key={index} className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/30">
-                <p className="text-sm font-medium mb-2">{goal.title}</p>
-                <div className="w-full bg-white/20 rounded-full h-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${goal.progress}%` }}
-                    transition={{ duration: 1, delay: index * 0.3 }}
-                    className="bg-blue-400 h-2 rounded-full"
-                  />
-                </div>
-                <p className="text-xs text-blue-400 mt-1">{goal.progress}% concluído</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {tutorialSteps.map((step, index) => (
+            <div key={index} className="flex items-center gap-2 text-sm">
+              <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center">
+                <span className="text-purple-400 text-xs font-bold">{index + 1}</span>
               </div>
-            ))}
-          </div>
+              <span className="text-white">{step}</span>
+            </div>
+          ))}
         </div>
       </div>
-      
-      <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-        <FiCheckCircle className="text-green-400 mb-2" />
-        <p className="text-green-400 text-sm">
-          Complete metas para desbloquear novas automaticamente e ganhar conquistas!
-        </p>
+
+      {/* Botão Criar Meta */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="w-full p-4 border-2 border-dashed border-blue-500/30 rounded-xl hover:border-blue-500/50 transition-colors group"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <FiPlus className="text-blue-400 text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-blue-400 font-medium">Criar Nova Meta</span>
+            <span className="text-slate-400 text-sm">Clique para personalizar seus objetivos</span>
+          </div>
+        </button>
+      </div>
+
+      {/* Formulário de Exemplo */}
+      {showCreateForm && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10"
+        >
+          <h5 className="font-medium mb-3 text-blue-400">Exemplo: Criando uma Meta</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input
+              placeholder="Ex: Economizar R$ 300"
+              className="p-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm"
+              readOnly
+            />
+            <select className="p-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm">
+              <option>Economia de Dinheiro</option>
+            </select>
+            <input
+              placeholder="300"
+              className="p-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm"
+              readOnly
+            />
+            <input
+              type="date"
+              className="p-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm"
+              readOnly
+            />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <div className="w-8 h-8 bg-green-500 rounded-lg"></div>
+            <div className="w-8 h-8 bg-blue-500 rounded-lg opacity-50"></div>
+            <div className="w-8 h-8 bg-purple-500 rounded-lg opacity-50"></div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Metas de Exemplo */}
+      <div className="space-y-4 mb-6">
+        <h4 className="font-medium text-white flex items-center gap-2">
+          <FiStar className="text-yellow-400" />
+          Suas Metas Ativas
+        </h4>
+        
+        {exampleGoals.map((goal, index) => (
+          <motion.div
+            key={goal.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.2 }}
+            className="p-4 rounded-2xl border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+            style={{ backgroundColor: `${goal.color}10` }}
+            onClick={() => setSelectedGoal(selectedGoal === goal.id ? null : goal.id)}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="p-2 rounded-xl"
+                  style={{ backgroundColor: `${goal.color}20` }}
+                >
+                  <span style={{ color: goal.color }}>
+                    {getIconComponent(goal.icon)}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-white">{goal.title}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        goal.status === 'concluida' 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
+                      {goal.status === 'concluida' ? 'Concluída' : 'Ativa'}
+                    </span>
+                    {goal.status === 'ativa' && (
+                      <span className="text-xs text-slate-400">
+                        {goal.daysLeft} dias restantes
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {goal.status === 'ativa' && (
+                <button
+                  className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs hover:bg-blue-500/30 transition-colors"
+                >
+                  + Progresso
+                </button>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-400">Progresso</span>
+                <span className="text-sm text-white">
+                  {goal.current} / {goal.target} {goal.unit}
+                </span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-3">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${goal.progress}%` }}
+                  transition={{ duration: 1, delay: index * 0.3 }}
+                  className="h-3 rounded-full"
+                  style={{ backgroundColor: goal.color }}
+                />
+              </div>
+              <p className="text-xs mt-1" style={{ color: goal.color }}>
+                {goal.progress}% concluído
+              </p>
+            </div>
+
+            {/* Detalhes Expandidos */}
+            {selectedGoal === goal.id && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="pt-3 border-t border-white/10"
+              >
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-lg font-bold" style={{ color: goal.color }}>
+                      {goal.current}
+                    </p>
+                    <p className="text-xs text-slate-400">Atual</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{goal.target}</p>
+                    <p className="text-xs text-slate-400">Meta</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{goal.target - goal.current}</p>
+                    <p className="text-xs text-slate-400">Restante</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Recursos do Sistema */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+          <FiCheckCircle className="text-green-400 mb-2" />
+          <p className="text-green-400 text-sm font-medium mb-1">Controle Total</p>
+          <p className="text-green-300 text-xs">
+            Você define objetivos, prazos, categorias e acompanha seu próprio progresso
+          </p>
+        </div>
+        
+        <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+          <FiAward className="text-blue-400 mb-2" />
+          <p className="text-blue-400 text-sm font-medium mb-1">Gamificação</p>
+          <p className="text-blue-300 text-xs">
+            Marcos, recompensas e visual personalizado para manter você motivado
+          </p>
+        </div>
+      </div>
+
+      {/* Dica Final */}
+      <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+        <div className="flex items-start gap-3">
+          <FiTarget className="text-purple-400 mt-1" />
+          <div>
+            <p className="text-purple-400 text-sm font-medium mb-1">💡 Dica Pro:</p>
+            <p className="text-purple-300 text-xs leading-relaxed">
+              Comece com metas pequenas e alcançáveis. Defina marcos intermediários 
+              e celebre cada conquista para manter a motivação alta!
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
